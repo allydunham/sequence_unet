@@ -1,0 +1,9 @@
+# Exclude large PN files
+proteinnet/*
+
+# Exclude py scripts in models (and elsewhere) as these are checked into git
+*.py
+
+# Exclude old model runs
+/model_archive
+*_model.tf/*

@@ -1,0 +1,10 @@
+data/*
+meta/*
+figures/*
+
+# Models
+models/**
+!models/**/
+!models/**/*.py
+
+.Rproj.user
