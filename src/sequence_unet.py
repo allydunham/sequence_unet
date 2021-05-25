@@ -6,7 +6,7 @@ import numpy as np
 from tensorflow.keras import layers, models
 from graph_cnn import GraphCNN
 
-def frequency_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
+def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
                    graph_layers=None, graph_activation="relu",
                    conv_activation="relu", pred_activation="sigmoid",
                    kernel_regulariser=None, batch_normalisation=False):
@@ -34,7 +34,7 @@ def frequency_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
         for i, units in enumerate(graph_layers):
             x = GraphCNN(units, activation=graph_activation, name=f'graph_{i}')([input_graph, x])
 
-        x = layers.concatenate([input_seq, x])
+        x = layers.concatenate([input_seq, x], name="graph_concat")
 
     # Contraction
     contraction = []
@@ -74,7 +74,7 @@ def frequency_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
         x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
                           activation=conv_activation, name=f'up_{i}_conv_1',
                           kernel_regularizer=kernel_regulariser)(x)
-        x = layers.concatenate([contraction[i], x])
+        x = layers.concatenate([contraction[i], x], name=f"up_{i}_concat")
 
         x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
                           activation=conv_activation, name=f'up_{i}_conv_2',

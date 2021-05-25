@@ -4,7 +4,7 @@ Baseline CNN to compare UNET model to.
 """
 from tensorflow.keras import layers, models
 
-def baseline_cnn(filters=32, kernel_size=7, activation="relu", pred_activation="sigmoid"):
+def baseline_cnn(filters=[32], kernel_size=[7], activation="relu", pred_activation="sigmoid"):
     """
     Simple baseline CNN model predicting an Nx20 matrix
 

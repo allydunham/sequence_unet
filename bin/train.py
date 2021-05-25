@@ -121,7 +121,7 @@ def parse_args():
                         help="Track training using tensorboard")
     parser.add_argument('--checkpoint', '-c', default=0, type=int,
                         help="Checkpoint frequency in epochs")
-    parser.add_argument('--early_stop', '-s', default=-1, type=int,
+    parser.add_argument('--early_stop', '-a', default=-1, type=int,
                         help="Enable early stopping on val_loss with a patience of N epochs")
 
     return parser.parse_args()

@@ -29,7 +29,7 @@ class SequenceUNETMapFunction(LabeledFunction):
         self.pssm = pssm
 
         output_shapes = ([None, 20], [None, None]) if self.contact_graph else ([None, 20],)
-        output_types = ('float32', 'float32') if self.contact_graph else ('float32')
+        output_types = ('float32', 'float32') if self.contact_graph else ('float32',)
 
         output_shapes = [output_shapes, [None, 20]]
         output_types = [output_types, 'int32' if self.threshold is not None else 'float32']
@@ -65,9 +65,9 @@ class SequenceUNETMapFunction(LabeledFunction):
         out = (data, contacts) if self.contact_graph else (data,)
 
         if self.weights:
-            yield out, labels, weights
+            return out, labels, weights
         else:
-            yield out, labels
+            return out, labels
 
 class ClinVarMapFunction(LabeledFunction):
     """
@@ -199,9 +199,9 @@ class SequenceMap:
                 weights = np.pad(weights, (0, pad_rows), mode='constant')
 
             if self.weights:
-                yield (seq,), label, weights
+                return (seq,), label, weights
             else:
-                yield (seq,), label
+                return (seq,), label
 
 def one_hot_sequence(seq):
     """

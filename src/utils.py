@@ -10,7 +10,7 @@ import tensorflow as tf
 
 from lsf import bsub
 
-def make_experiment_dir(model, path, data_func, overwrite=False, save_format='h5'):
+def make_experiment_dir(model, path, data_func, command, overwrite=False, save_format='h5'):
     """
     Setup an experiment directory
     """
@@ -29,6 +29,10 @@ def make_experiment_dir(model, path, data_func, overwrite=False, save_format='h5
     model.save(f'{path}/model.{save_format}', save_format=save_format)
     model.save(f'{path}/initial_model.{save_format}', save_format=save_format)
 
+    # Write train command
+    with open(f'{path}/train.sh', 'w') as train_script:
+        print(command, file=train_script)
+
     # Dump data function
     with open(f'{path}/data_loader.dill', 'wb') as data_func_file:
         dill.dump(data_func, data_func_file, recurse=True)
@@ -41,7 +45,7 @@ def model_bsub(model_name, model_dir, big_job=False, ram=None,
     """
     Generate default bsub command string for training a model on the EBI farm
     """
-    command = ['python bin/models/train_keras.py',
+    command = ['python bin/train.py',
                f'-d {model_dir}/data_loader.dill',
                f'-l {model_dir}/training_log',
                f'-f {finetune}' if finetune is not None else '',
@@ -58,8 +62,8 @@ def model_bsub(model_name, model_dir, big_job=False, ram=None,
 
     ram = ram if ram is not None else 30000 if big_job else 20000
 
-    bsub_args = {'name': model_name, 'stdout': f'logs/{model_name}_train.%J',
-                 'stderr': f'logs/{model_name}_train.%J.err', 'gpu': gpu,
+    bsub_args = {'name': model_name, 'stdout': f'{model_dir}/training_log.%J',
+                 'stderr': f'{model_dir}/training_log.%J.err', 'gpu': gpu,
                  'gpu_exclusive': big_job, 'ram': ram,
                  'hosts': "gpu-009 gpu-011", 'project': 'gpu',
                  'queue': 'research-rh74'}
