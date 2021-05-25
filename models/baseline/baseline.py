@@ -44,7 +44,7 @@ def load_data_clinvar(validation=False):
         clin_path = 'data/clinvar/clinvar_train.tsv'
 
     clinvar = pd.read_csv(clin_path, sep="\t")
-    pn_path = 'data/protein_net/text/casp12/clinvar'
+    pn_path = 'data/proteinnet/casp12/clinvar'
     filter_func = combine_filters(
         make_length_filter(min_length=32, max_length=2000),
         make_id_filter(list(clinvar.pdb_id), list(clinvar.chain))
@@ -95,7 +95,7 @@ def main():
             # Create sample train script
             command = utils.model_bsub(f"baseline_{model_name}_{size_name}", model_dir,
                                         ram=8000, epochs=100, validation_epochs=1,
-                                        big_job=False, save_format='h5')
+                                        checkpoint=None, big_job=False, save_format='h5')
 
             # Use this to setup a model directory for the experiment(s)
             utils.make_experiment_dir(model, model_dir, load_data, command, save_format='h5')
