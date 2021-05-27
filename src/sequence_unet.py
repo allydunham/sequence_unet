@@ -48,11 +48,11 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
         contraction.append(x)
         x = layers.MaxPool1D(pool_size=2, strides=2, padding='same', name=f'down_{i}_max_pool')(x)
 
-        if dropout:
-            x = layers.SpatialDropout1D(dropout, name=f'down_{i}_dropout')(x)
-
         if batch_normalisation:
             x = layers.BatchNormalization(name=f"down_{i}_batch_normalisation")(x)
+
+        if dropout:
+            x = layers.SpatialDropout1D(dropout, name=f'down_{i}_dropout')(x)
 
     # Bottom layer
     x = layers.Conv1D(filters * 2 ** num_layers, kernel_size, 1,
@@ -62,11 +62,11 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
                       padding='same', activation=conv_activation, name=f'bottom_conv_2',
                       kernel_regularizer=kernel_regulariser)(x)
 
-    if dropout:
-        x = layers.SpatialDropout1D(dropout, name='bottom_dropout')(x)
-
     if batch_normalisation:
             x = layers.BatchNormalization(name="bottom_batch_normalisation")(x)
+
+    if dropout:
+        x = layers.SpatialDropout1D(dropout, name='bottom_dropout')(x)
 
     # Expansion
     for i in range(num_layers - 1, -1, -1):
@@ -83,11 +83,11 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
                           activation=conv_activation, name=f'up_{i}_conv_3',
                           kernel_regularizer=kernel_regulariser)(x)
 
-        if dropout:
-            x = layers.SpatialDropout1D(dropout, name=f'up_{i}_dropout')(x)
-
         if batch_normalisation:
             x = layers.BatchNormalization(name=f"up_{i}_batch_normalisation")(x)
+
+        if dropout:
+            x = layers.SpatialDropout1D(dropout, name=f'up_{i}_dropout')(x)
 
     preds = layers.Conv1D(20, 1, 1, activation=pred_activation, name="predictor",
                           kernel_regularizer=kernel_regulariser)(x)
