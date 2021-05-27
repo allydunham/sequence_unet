@@ -6,4 +6,7 @@ proteinnet/*
 
 # Exclude old model runs
 /model_archive
-*_model.tf/*
+
+# Exclude models generally (only sync the training traces)
+*model.tf/*
+*model.h5
