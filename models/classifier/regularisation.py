@@ -64,7 +64,7 @@ def main():
 
         # Create sample train script
         command = utils.model_bsub(f"reg_d{dropout}_{kernel}_{batch}", model_dir,
-                                    ram=15000, epochs=150, validation_epochs=1,
+                                    ram=10000, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)

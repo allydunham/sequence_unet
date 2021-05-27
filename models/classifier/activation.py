@@ -49,7 +49,8 @@ def main():
             print(f"Model {model_dir} already exists, skipping", file=sys.stderr)
             continue
 
-        model = sequence_unet(filters=32, kernel_size=5, num_layers=6, conv_activation=activation)
+        model = sequence_unet(filters=32, kernel_size=5, num_layers=6, conv_activation=activation,
+                              batch_normalisation=True, dropout=0.05)
 
         optimiser = optimizers.Adam(lr=0.01, epsilon=0.01)
         loss = metrics.masked_binary_crossentropy
@@ -58,7 +59,7 @@ def main():
 
         # Create sample train script
         command = utils.model_bsub(f"{activation}", model_dir,
-                                    ram=8000, epochs=150, validation_epochs=1,
+                                    ram=10000, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)
