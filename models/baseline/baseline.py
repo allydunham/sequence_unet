@@ -96,7 +96,7 @@ def main():
             command = utils.model_bsub(f"baseline_{model_name}_{size_name}", model_dir,
                                         ram=8000, epochs=100, validation_epochs=1,
                                         checkpoint=None, big_job=False, save_format='h5',
-                                        early_stop=True)
+                                        early_stop=10)
 
             # Use this to setup a model directory for the experiment(s)
             utils.make_experiment_dir(model, model_dir, load_data, command, save_format='h5')
