@@ -35,7 +35,7 @@ def make_load_data(num_layers=4):
 
 def main():
     """Main script"""
-    root = 'models/classifier/regularisation'
+    root = 'models/classifier/size'
     if not os.path.isdir(root):
         os.mkdir(root)
 
