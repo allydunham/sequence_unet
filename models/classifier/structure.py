@@ -54,7 +54,7 @@ def main():
     )
 
     for graph_layers, graph_activation in structure:
-        layer_str = '_'.join(graph_layers) if graph_layers is not None else 'none'
+        layer_str = '_'.join(str(i) for i in graph_layers) if graph_layers is not None else 'none'
         model_dir = f"{root}/{graph_activation}_{layer_str}"
 
         if os.path.isdir(model_dir):
