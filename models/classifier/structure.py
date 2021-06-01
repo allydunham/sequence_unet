@@ -43,14 +43,13 @@ def main():
     # graph_layers, graph_activation
     structure = (
         (None, None),
-        ([16], "swish"),
+        ([16], "elu"),
         ([32], "relu"),
         ([32], "elu"),
-        ([32], "swish"),
-        ([64], "swish"),
-        ([32, 32], "swish"),
+        ([64], "elu"),
+        ([32, 32], "elu"),
         ([32, 32], "relu"),
-        ([32, 32, 32], "swish"),
+        ([32, 32, 32], "elu"),
     )
 
     for graph_layers, graph_activation in structure:
@@ -61,7 +60,7 @@ def main():
             print(f"Model {model_dir} already exists, skipping", file=sys.stderr)
             continue
 
-        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="swish",
+        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="elu",
                               graph_layers=graph_layers, graph_activation=graph_activation,
                               batch_normalisation=True, dropout=0.05)
 

@@ -60,7 +60,7 @@ def main():
             continue
 
         model = sequence_unet(filters=filters, kernel_size=kernel, num_layers=layers,
-                              batch_normalisation=True, dropout=0.05, conv_activation="swish")
+                              batch_normalisation=True, dropout=0.05, conv_activation="elu")
 
         optimiser = optimizers.Adam(lr=0.01, epsilon=0.01)
         loss = metrics.masked_binary_crossentropy
