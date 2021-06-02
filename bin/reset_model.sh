@@ -1,17 +1,56 @@
 #!/usr/bin/env bash
-# Reset an initialised model directory
+# Utility script to run common commands on models
+# Path is expected to be:
+# reset: model directory
+# init: init script
+# train: model directory
+# check: (list of) model directory
 
-model_dir=$1
-rm "$model_dir/train/*" "$model_dir/validation/*"
+command=$1
+path=$2
 
-if test -f "$model_dir/model.tf"; then
-    rm -r "$model_dir/model.tf"
-    cp -r "$model_dir/initial_model.tf" "$model_dir/model.tf"
-elif test -f "$model_dir/model.h5"; then
-    rm "$model_dir/model.h5"
-    cp -r "$model_dir/initial_model.h5" "$model_dir/model.h5"
-else
-    echo "Exiting: neither model.h5 nor model.tf exist."
-    exit 1
+check_dir () {
+    if ! test -f "$1/train.sh"; then
+        echo "$1 does not look like a model dir"
+        exit 1
+    fi
+}
+
+check_init () {
+    if ! [[ "$1" =~ "models/*/*.py" ]] then
+        echo "$1 does not look like an init script"
+        exit 1
+    fi
+}
+
+if [ "$command" = "reset" ]; then
+    check_dir "$path"
+
+    rm "$path/train/*" "$path/validation/*"
+    if test -f "$path/model.tf"; then
+        rm -r "$path/model.tf"
+        cp -r "$path/initial_model.tf" "$path/model.tf"
+    elif test -f "$path/model.h5"; then
+        rm "$path/model.h5"
+        cp -r "$path/initial_model.h5" "$path/model.h5"
+    else
+        echo "Exiting: neither model.h5 nor model.tf exist."
+        exit 1
+    fi
+
+elif [ "$command" = "init" ]; then
+    check_init "$path"
+    name=${path##*/}
+    name=${name%.py}
+    bsub -J "${name}_init" -o "logs/${name}_init.%J" -e "logs/${name}_init.%J.err" -M 4000 -R "rusage[mem=4000]" -P "gpu" -q "research-rh74" -m "gpu-009 gpu-011" -gpu - "python $path"
+
+elif [ "$command" = "train" ]; then
+    check_dir "$path"
+    for i in $path/train.sh; do bash "$i"; done
+
+elif [ "$command" = "check" ]; then
+    check_dir "$path"
+    grep -E "Successfully completed|Exited" "${path}/training_log.*"
+
 fi
 
