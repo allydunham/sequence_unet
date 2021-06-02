@@ -1,6 +1,7 @@
 """
 Experiment testing various deleteriousness thresholds for the Sequence UNET model
 """
+from operator import ne
 import os
 import sys
 
@@ -39,15 +40,15 @@ def main():
     if not os.path.isdir(root):
         os.mkdir(root)
 
-    # threshold
+    # threshold, pos_weight, neg_weight
     thresholds = [
-        0.1,
-        0.01,
-        0.001,
-        0.0001
+        (0.1, 0.15, 1),
+        (0.01, 1, 0.9),
+        (0.001, 1, 0.38),
+        (0.0001, 1, 0.25)
     ]
 
-    for threshold in thresholds:
+    for threshold, pos_weight, neg_weight in thresholds:
         model_dir = f"{root}/t{threshold}"
 
         if os.path.isdir(model_dir):
@@ -58,7 +59,8 @@ def main():
                               batch_normalisation=True, dropout=0.05, conv_activation="elu")
 
         optimiser = optimizers.Adam(lr=0.01, epsilon=0.01)
-        loss = metrics.masked_binary_crossentropy
+        loss = metrics.WeightedMaskedBinaryCrossEntropy(pos_weight=pos_weight,
+                                                        neg_weight=neg_weight)
         acc = metrics.masked_accuracy
         model.compile(optimizer=optimiser, loss=loss, metrics=[acc])
 
