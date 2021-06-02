@@ -61,7 +61,7 @@ elif [ "$command" = "train" ]; then
 elif [ "$command" = "check" ]; then
     for path in "${paths[@]}"; do
         check_dir "$path"
-        grep -E "Successfully completed|Exited" "${path}"/training_log.*
+        grep -E "Successfully completed|Exited with" "${path}"/training_log.*
     done
 fi
 

@@ -73,7 +73,7 @@ def main():
 
         # Create sample train script
         command = utils.model_bsub(f"structure_{graph_activation}_{layer_str}", model_dir,
-                                    ram=12000, epochs=150, validation_epochs=1,
+                                    ram=15000, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)
