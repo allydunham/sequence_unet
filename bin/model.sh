@@ -17,7 +17,7 @@ check_dir () {
 }
 
 check_init () {
-    if ! [[ "$1" =~ models/*/*.py ]]; then
+    if ! [[ "$1" == *.py ]]; then
         echo "$1 does not look like an init script"
         exit 1
     fi
