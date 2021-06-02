@@ -3,11 +3,7 @@
 Module with utility functions for managing experiments using the various models
 """
 import os
-from inspect import cleandoc
-
 import dill
-import tensorflow as tf
-
 from lsf import bsub
 
 def make_experiment_dir(model, path, data_func, command, overwrite=False, save_format='h5'):
