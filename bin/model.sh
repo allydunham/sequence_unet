@@ -54,7 +54,7 @@ elif [ "$command" = "init" ]; then
 elif [ "$command" = "train" ]; then
     for path in "${paths[@]}"; do
         check_dir "$path"
-        for i in $path/train.sh; do bash "$i"; done
+        bash "$path"/train.sh
     done
 
 # Check training log(s)
