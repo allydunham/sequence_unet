@@ -64,8 +64,9 @@ def main():
                       metrics=["mean_absolute_error"], sample_weight_mode="temporal")
 
         # Create sample train script
+        ram = 10000 if filters < 50 else 15000
         command = utils.model_bsub(f"size_f{filters}_k{kernel}", model_dir,
-                                    ram=10000, epochs=150, validation_epochs=1,
+                                    ram=ram, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)
