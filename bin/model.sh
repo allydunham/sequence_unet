@@ -29,12 +29,12 @@ if [ "$command" = "reset" ]; then
         check_dir "$path"
 
         rm "$path"/train/* "$path"/validation/*
-        if test -f "$path/model.tf"; then
+        if test -d "$path/model.tf"; then
             rm -r "$path/model.tf"
             cp -r "$path/initial_model.tf" "$path/model.tf"
         elif test -f "$path/model.h5"; then
             rm "$path/model.h5"
-            cp -r "$path/initial_model.h5" "$path/model.h5"
+            cp "$path/initial_model.h5" "$path/model.h5"
         else
             echo "Exiting: neither model.h5 nor model.tf exist."
             exit 1
