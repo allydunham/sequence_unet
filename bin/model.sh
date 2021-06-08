@@ -29,6 +29,7 @@ if [ "$command" = "reset" ]; then
         check_dir "$path"
 
         rm "$path"/train/* "$path"/validation/*
+        rm "$path"/training_log.*
         if test -d "$path/model.tf"; then
             rm -r "$path/model.tf"
             cp -r "$path/initial_model.tf" "$path/model.tf"
