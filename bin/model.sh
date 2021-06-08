@@ -48,7 +48,7 @@ elif [ "$command" = "init" ]; then
         check_init "$path"
         name=${path##*/}
         name=${name%.py}
-        bsub -J "${name}_init" -o "logs/${name}_init.%J" -e "logs/${name}_init.%J.err" -M 4000 -R "rusage[mem=4000]" -P "gpu" -q "research-rh74" -m "gpu-009 gpu-011" -gpu - "python $path"
+        bsub -J "${name}_init" -o "logs/${name}_init.%J" -e "logs/${name}_init.%J.err" -M 8000 -R "rusage[mem=8000]" -P "gpu" -q "research-rh74" -m "gpu-009 gpu-011" -gpu - "python $path"
     done
 
 # Run train scripts
