@@ -6,17 +6,15 @@ import numpy as np
 from tensorflow.keras import layers, models
 from metrics import CUSTOM_OBJECTS
 
-def top_model(bottom_model=None, pssm=False, tune_layers=3, kernel_size=3,
+def top_model(bottom_model=None, features=False, tune_layers=3, kernel_size=3,
               activation="sigmoid", kernel_regulariser=None,
               activity_regulariser=None, dropout=0):
     """
     Model predicting variant deleteriousness. Trained on top of a PSSM prediction model.
     Predicts a single probability for each variant.
 
-    bottom_model: PSSM model to train on top of
-    pssm: Start from PSSM values. bottom_model=None and pssm=True creates a model that expects
-    a PSSM as input. If bottom_model is specified and pssm=True the predicted PSSM is used, and
-    if pssm=False the layer below is used.
+    bottom_model: PSSM model to train on top of. Bottom_model=None creates a simple CNN model.
+    features: Start from model features rather than predicted output.
     tune_layers: Number of top layers to set as trainable.
     """
     if bottom_model is not None:
@@ -27,12 +25,10 @@ def top_model(bottom_model=None, pssm=False, tune_layers=3, kernel_size=3,
         for layer in bottom_model.layers[:-tune_layers]:
             layer.trainable = False
 
-        x = bottom_model.layers[-1 if pssm else -2].output
-    elif pssm:
-        input_pssm = layers.Input(shape=[None, 20], name='input_pssm')
-        x = input_pssm
+        x = bottom_model.layers[-2 if features else -1].output
     else:
-        raise ValueError("Either bottom or pssm must be specified")
+        input_features = layers.Input(shape=[None, 20], name='input')
+        x = input_features
 
     if dropout:
         x = layers.SpatialDropout1D(dropout, name="top_dropout")(x)
@@ -41,5 +37,5 @@ def top_model(bottom_model=None, pssm=False, tune_layers=3, kernel_size=3,
                           kernel_regularizer=kernel_regulariser,
                           activity_regularizer=activity_regulariser)(x)
 
-    return models.Model(inputs=bottom_model.inputs if bottom_model is not None else input_pssm,
+    return models.Model(inputs=bottom_model.inputs if bottom_model is not None else input_features,
                         outputs=preds)
