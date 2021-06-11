@@ -150,8 +150,8 @@ def main(args):
 
     if args.clinvar:
         preds = predict_clinvar(model, clinvar=tsv, proteinnet=args.proteinnet,
-                                layers=args.layers, contact=args.contacts,
-                                pssm=args.pssm)
+                                layers=args.layers if args.layers else None,
+                                contact=args.contacts, pssm=args.pssm)
 
     elif args.proteinnet:
         filter_func = make_id_filter(list(tsv.pdb_id), list(tsv.chain)) if tsv is not None else None
