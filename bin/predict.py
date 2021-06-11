@@ -175,7 +175,7 @@ def parse_args():
 
     inputs = parser.add_argument_group("Input Data")
     inputs.add_argument('--tsv', "-t", help="TSV file containing variants of interest")
-    inputs.add_argument('--clinvar', "-l", action="store_true",
+    inputs.add_argument('--clinvar', "-v", action="store_true",
                         help="TSV file contains ClinVar variants")
     inputs.add_argument('--proteinnet', "-p", help="ProteinNet file")
     inputs.add_argument('--fasta', "-f", help="Fasta file")
