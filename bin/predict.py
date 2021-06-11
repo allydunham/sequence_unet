@@ -33,6 +33,7 @@ def predict_fasta(model, fasta, layers, tsv=None):
     """
     if tsv is not None:
         tsv = tsv[["gene", "position", "wt", "mut"]]
+
     output = []
     for seq in SeqIO.parse(fasta, format="fasta"):
         one_hot = one_hot_sequence(seq)
@@ -41,8 +42,9 @@ def predict_fasta(model, fasta, layers, tsv=None):
         pad_rows = 2 ** (layers - 1) - one_hot.shape[0] % 2 ** (layers - 1) if layers > 0 else 0
         if pad_rows:
             one_hot = np.pad(one_hot, ((0, pad_rows), (0, 0)), mode='constant')
-
-        preds = model(np.array([one_hot])).numpy()[0, :-pad_rows, :]
+            preds = model(np.array([one_hot])).numpy()[0, :-pad_rows, :]
+        else:
+            preds = model(np.array([one_hot])).numpy()[0, :, :]
 
         df = pd.DataFrame(preds, columns=AMINO_ACIDS).reset_index()
         df = df.rename(columns={'index': 'position'})
@@ -162,7 +164,7 @@ def main(args):
         preds = predict_proteinnet(model, data, func)
 
     elif args.fasta:
-        preds = predict_fasta(model, args.fasta, args.layers, args.tsv)
+        preds = predict_fasta(model, fasta=args.fasta, layers=args.layers, tsv=tsv)
 
     else:
         raise ValueError("One of --fasta or --proteinnet must be passed")
