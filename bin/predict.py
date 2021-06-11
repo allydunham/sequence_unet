@@ -38,8 +38,7 @@ def predict_fasta(model, fasta, layers, tsv=None):
         one_hot = one_hot_sequence(seq)
 
         # Pad to be divisable
-        length = one_hot.shape[0]
-        pad_rows = 2 ** (layers - 1) - length % 2 ** (layers - 1) if layers is not None else 0
+        pad_rows = 2 ** (layers - 1) - one_hot.shape[0] % 2 ** (layers - 1) if layers > 0 else 0
         if pad_rows:
             one_hot = np.pad(one_hot, ((0, pad_rows), (0, 0)), mode='constant')
 
