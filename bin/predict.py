@@ -31,7 +31,8 @@ def predict_fasta(model, fasta, layers, tsv=None):
     """
     Predict values from a Fasta file
     """
-    tsv = tsv[["gene", "position", "wt", "mut"]]
+    if tsv is not None:
+        tsv = tsv[["gene", "position", "wt", "mut"]]
     output = []
     for seq in SeqIO.parse(fasta, format="fasta"):
         one_hot = one_hot_sequence(seq)
@@ -63,7 +64,9 @@ def predict_proteinnet(model, data, func, tsv=None):
     """
     Predict values from a ProteinNetDataset
     """
-    tsv = tsv[["pdb_id", "chain", "position", "wt", "mut"]]
+    if tsv is not None:
+        tsv = tsv[["pdb_id", "chain", "position", "wt", "mut"]]
+
     output = []
     for record in data:
         # Format model input
@@ -81,7 +84,7 @@ def predict_proteinnet(model, data, func, tsv=None):
         df = df.rename(columns={'index': 'position'})
         df['position'] = df['position'] + 1
         df = df[df.index < len(record)] # Remove padded records
-        df['pdb_id'] = record.pdb_id
+        df['pdb_id'] = record.pdb_id if record.pdb_id is not None else record.id
         df['chain'] = record.pdb_chain
         df['wt'] = record.primary
         df = df.melt(id_vars=["pdb_id", "chain", "position", "wt"],
@@ -146,25 +149,25 @@ def main(args):
     model = load_model(args.model, custom_objects=CUSTOM_OBJECTS)
 
     if args.clinvar:
-        preds = predict_proteinnet(model, clinvar=tsv, proteinnet=args.proteinnet,
-                                   layers=args.layers, contact=args.contact,
-                                   pssm=args.pssm)
-        preds.to_csv(sys.stdout, sep="\t", index=False)
+        preds = predict_clinvar(model, clinvar=tsv, proteinnet=args.proteinnet,
+                                layers=args.layers, contact=args.contacts,
+                                pssm=args.pssm)
 
     elif args.proteinnet:
         filter_func = make_id_filter(list(tsv.pdb_id), list(tsv.chain)) if tsv is not None else None
         data = ProteinNetDataset(path=args.proteinnet, preload=False, filter_func=filter_func)
         func = SequenceUNETMapFunction(num_layers=args.layers if args.layers else None,
-                                       contact_graph=args.contact,
+                                       contact_graph=args.contacts,
                                        pssm=args.pssm)
         preds = predict_proteinnet(model, data, func)
 
     elif args.fasta:
         preds = predict_fasta(model, args.fasta, args.layers, args.tsv)
-        preds.to_csv(sys.stdout, sep="\t", index=False)
 
     else:
         raise ValueError("One of --fasta or --proteinnet must be passed")
+
+    preds.to_csv(sys.stdout, sep="\t", index=False)
 
 def parse_args():
     """Process arguments"""
