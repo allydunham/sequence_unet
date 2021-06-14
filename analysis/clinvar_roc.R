@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Calculate ROC curves for ClinVar variants from the PSSM top models
-source('src/analysis/config.R')
-source("src/analysis/analysis.R")
+source('src/config.R')
+source("src/analysis.R")
 data("BLOSUM62", package = "Biostrings")
 plots <- list()
 
@@ -16,17 +16,13 @@ clinvar_stats <- read_tsv("data/clinvar/clinvar_test.tsv") %>%
 preds <- bind_rows(
   # Trained on ProteinNet
   `Baseline Frequency` = read_tsv("data/clinvar/preds/baseline_freq.tsv"),
-  `UNET DMS` = read_tsv("data/clinvar/preds/unet_dms.tsv"),
-  `UNET Frequency (End to End)` = read_tsv("data/clinvar/preds/unet_end_to_end_freq.tsv"),
-  `UNET Frequency (Top Model)` = read_tsv("data/clinvar/preds/unet_top_model_freq.tsv"),
+  `UNET` = read_tsv("data/clinvar/preds/unet_freq.tsv"),
+  `PreGraph UNET` = read_tsv("data/clinvar/preds/unet_freq_structure.tsv"),
   
   # Trained on ClinVar (incl. some ProteinNet pre-training for some models)
   `Baseline ClinVar` = read_tsv("data/clinvar/preds/baseline_clinvar.tsv"),
-  `True PSSM` = read_tsv("data/clinvar/preds/true_pssm.tsv"),
-  `Pred PSSM` = read_tsv("data/clinvar/preds/unet_pred_pssm.tsv"),
-  `UNET Features (Sequence)` = read_tsv("data/clinvar/preds/unet_pred_features_seq.tsv"),
-  `UNET Features (Structure)` = read_tsv("data/clinvar/preds/unet_pred_features_struct.tsv"),
-  `UNET Features (Frequency)` = read_tsv("data/clinvar/preds/unet_pred_features_classifier.tsv"),
+  `UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_features_top.tsv"),
+  `PreGraph UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_structure_features_top.tsv"),
   .id = "model"
 ) %>%
   select(-wt) %>%
@@ -44,33 +40,13 @@ roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_pa
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
 
-unet_models <- c("UNET Features (Frequency)", "UNET Features (Structure)", "UNET Frequency (End to End)", 
-                 "UNET Features (Sequence)", "UNET DMS", "UNET Frequency (Top Model)")
-plots$features_roc <- filter(roc, model %in% unet_models) %>%
-  ggplot(aes(x = fpr, y = tpr, colour = model_auc)) + 
-  geom_abline(slope = 1, linetype = 'dashed', colour = 'black') +
-  geom_step(direction = "hv") +
-  labs(x = 'False Positive Rate', y = 'True Positive Rate') +
-  scale_colour_brewer(type = 'qual', palette = 'Dark2', name = '')
-
-plots$features_pr <-  filter(roc, model %in% unet_models) %>%
-  ggplot(aes(x = tpr, y = precision, colour = model)) + 
-  geom_hline(yintercept = 0.5, linetype = 'dashed', colour = 'black') +
-  geom_line() +
-  labs(x = 'Recall', y = 'Precision') +
-  scale_colour_brewer(type = 'qual', palette = 'Dark2', name = '')
-
-comparisons <- c("UNET Features (Frequency)", "SIFT4G", "Baseline ClinVar", 
-                 "Baseline Frequency", "FoldX", "BLOSUM62", "True PSSM", "Pred PSSM")
-plots$comparisons_roc <- filter(roc, model %in% comparisons) %>%
-  ggplot(aes(x = fpr, y = tpr, colour = model_auc)) + 
+plots$roc <- ggplot(roc, aes(x = fpr, y = tpr, colour = model_auc)) + 
   geom_abline(slope = 1, linetype = 'dashed', colour = 'black') +
   geom_step(direction = "hv") +
   labs(x = 'False Positive Rate', y = 'True Positive Rate') +
   scale_colour_brewer(type = 'qual', palette = 'Set1', name = '')
 
-plots$comparisons_pr <- filter(roc, model %in% comparisons) %>%
-  ggplot(aes(x = tpr, y = precision, colour = model)) + 
+plots$pr <- ggplot(roc, aes(x = tpr, y = precision, colour = model)) + 
     geom_hline(yintercept = 0.5, linetype = 'dashed', colour = 'black') +
     geom_line() +
     labs(x = 'Recall', y = 'Precision') +
