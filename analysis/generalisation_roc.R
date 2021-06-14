@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Calculate ROC curves for Jelier and DMS predictions
-source('src/analysis/config.R')
-source("src/analysis/analysis.R")
+source('src/config.R')
+source("src/analysis.R")
 plots <- list()
 
 import_dms <- function() {
@@ -9,11 +9,10 @@ import_dms <- function() {
     select(gene, position, wt, mut, SIFT4G=sift, FoldX = total_energy) %>%
     mutate(gene = str_to_lower(str_remove_all(gene, " ")))
   preds <- bind_rows(
-    `DMS Classifier` = read_tsv("data/dms/preds/dms_classifier.tsv"),
     `Baseline Clinvar` = read_tsv("data/dms/preds/baseline_clinvar.tsv"),
     `Baseline Freq` = read_tsv("data/dms/preds/baseline_freq.tsv"),
-    `UNET Features Freq` = read_tsv("data/dms/preds/clinvar_features_freq.tsv"),
-    `UNET Frequency` = read_tsv("data/dms/preds/unet_freq.tsv"),
+    `UNET Top` = read_tsv("data/dms/preds/clinvar_top.tsv"),
+    `UNET` = read_tsv("data/dms/preds/unet_freq.tsv"),
     .id = "model"
   ) %>% pivot_wider(names_from = model, values_from = pred)
   
@@ -31,13 +30,13 @@ import_jelier <- function() {
     mutate(class = effect == "deleterious")
   
   bind_rows(
-    `DMS Classifier` = read_tsv("data/jelier/preds/dms_classifier.tsv"),
     `Baseline Clinvar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),
     `Baseline Freq` = read_tsv("data/jelier/preds/baseline_freq.tsv"),
-    `UNET Features Freq` = read_tsv("data/jelier/preds/clinvar_features_freq.tsv"),
-    `UNET Frequency` = read_tsv("data/jelier/preds/unet_freq.tsv"),
+    `UNET Top` = read_tsv("data/jelier/preds/clinvar_top.tsv"),
+    `UNET` = read_tsv("data/jelier/preds/unet_freq.tsv"),
     .id = "model"
   ) %>%
+    distinct(model, gene, position, wt, mut, .keep_all = TRUE) %>%
     pivot_wider(names_from = model, values_from = pred) %>% 
     left_join(base, ., by = c("gene", "position", "wt", "mut"))
 }
