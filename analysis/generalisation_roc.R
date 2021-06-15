@@ -27,7 +27,9 @@ import_dms <- function() {
 
 import_jelier <- function() {
   base <- read_tsv("data/jelier/jelier_variants.tsv") %>%
-    mutate(class = effect == "deleterious")
+    mutate(class = effect == "deleterious") %>%
+    left_join(read_tsv("data/jelier/preds/sift_foldx.tsv"), by = c("gene", "position", "wt", "mut")) %>%
+    rename(SIFT4G = sift_score, FoldX = foldx)
   
   bind_rows(
     `Baseline Clinvar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),
@@ -46,17 +48,19 @@ jelier_preds <- import_jelier()
 
 jelier_roc <- pivot_longer(jelier_preds, c(-gene, -position, -wt, -mut, -effect, -class), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
-  group_modify(~calc_roc(.x, class, pred, greater = !(.y == "SIFT4G"))) %>%
+  group_modify(~calc_roc(.x, class, pred, greater = !(.y == "SIFT4G"), max_steps = 6000)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
+write_tsv(jelier_roc, "data/jelier/roc.tsv")
 
 dms_roc <- pivot_longer(dms_preds, c(-gene, -position, -wt, -mut, -score, -class), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
-  group_modify(~calc_roc(.x, class, pred, greater = !(.y == "SIFT4G"))) %>%
+  group_modify(~calc_roc(.x, class, pred, greater = !(.y == "SIFT4G"), max_steps = 6000)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
+write_tsv(dms_roc, "data/dms/roc.tsv")
 
 plots$jelier_roc <- ggplot(jelier_roc, aes(x = fpr, y = tpr, colour = model_auc)) + 
   geom_abline(slope = 1, linetype = 'dashed', colour = 'black') +
