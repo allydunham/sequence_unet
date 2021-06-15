@@ -27,7 +27,9 @@ import_dms <- function() {
 
 import_jelier <- function() {
   base <- read_tsv("data/jelier/jelier_variants.tsv") %>%
-    mutate(class = effect == "deleterious")
+    mutate(class = effect == "deleterious") %>%
+    left_join(read_tsv("data/jelier/preds/sift_foldx.tsv"), by = c("gene", "position", "wt", "mut")) %>%
+    rename(SIFT4G = sift_score, FoldX = foldx)
   
   bind_rows(
     `Baseline Clinvar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),

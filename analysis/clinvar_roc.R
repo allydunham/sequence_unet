@@ -35,10 +35,11 @@ preds <- bind_rows(
 less = c("SIFT4G", "BLOSUM62")
 roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
-  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less))) %>%
+  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less), max_steps = 6000)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
+write_tsv(roc, "data/clinvar/roc.tsv")
 
 plots$roc <- ggplot(roc, aes(x = fpr, y = tpr, colour = model_auc)) + 
   geom_abline(slope = 1, linetype = 'dashed', colour = 'black') +

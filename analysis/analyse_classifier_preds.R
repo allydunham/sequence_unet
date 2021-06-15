@@ -38,8 +38,9 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
 ### Analyse ###
 greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, BLOSUM62 = FALSE)
 roc <- group_by(models, model) %>%
-  group_modify(~calc_roc(., deleterious, pred, greater = greater[.y$model], max_steps = 500)) %>%
-  mutate(model_auc = str_c(model, " (AUC = ", auc, ")"))
+  group_modify(~calc_roc(., deleterious, pred, greater = greater[.y$model], max_steps = 6000)) %>%
+  mutate(model_auc = auc_labeled_model(model, auc))
+write_tsv(roc, "data/freq/roc.tsv")
 
 plots$roc <- ggplot(roc, aes(x = fpr, y = tpr, colour = model_auc)) +
   geom_step() +
