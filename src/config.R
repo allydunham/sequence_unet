@@ -6,6 +6,7 @@ library(tidyverse)
 library(broom)
 library(ggpubr)
 library(ggtext)
+library(multipanelfigure)
 
 # Custom packages - available at github.com/allydunham
 library(plotlistr) 
