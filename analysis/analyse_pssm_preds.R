@@ -38,6 +38,7 @@ models <- bind_rows(models, .id = 'model') %>%
   pivot_longer(c(SPBuild, UNET, BLOSUM62, `UNET Structure`), names_to = 'model', values_to = 'pred') %>%
   rename(true = ProteinNet) %>%
   mutate(diff = pred - true)
+write_tsv(models, "data/pssm/combined_preds.tsv")
 
 ### Analyse ###
 plots <- list()
