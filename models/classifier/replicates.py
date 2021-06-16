@@ -30,7 +30,7 @@ def load_data(validation=False):
 
 def main():
     """Main script"""
-    root = 'models/classifier/activation'
+    root = 'models/classifier/replicates'
     if not os.path.isdir(root):
         os.mkdir(root)
 
