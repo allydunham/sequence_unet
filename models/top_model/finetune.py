@@ -38,11 +38,12 @@ def load_data(validation=False):
 def main():
     """Main script"""
     model_dir = 'models/top_model/finetune'
-    if not os.path.isdir(model_dir):
-        os.mkdir(model_dir)
 
     if os.path.isdir(model_dir):
         raise FileExistsError(f"Model {model_dir} already exists, skipping")
+
+    if not os.path.isdir(model_dir):
+        os.mkdir(model_dir)
 
     model_path = "models/classifier/structure/elu_32/model.tf"
     model = models.load_model(model_path, custom_objects=metrics.CUSTOM_OBJECTS)
