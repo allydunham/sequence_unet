@@ -50,6 +50,7 @@ def main():
         ([32, 32], "elu"),
         ([32, 32], "relu"),
         ([32, 32, 32], "elu"),
+        ([32, 32, 32], "relu")
     )
 
     for graph_layers, graph_activation in structure:
@@ -60,7 +61,7 @@ def main():
             print(f"Model {model_dir} already exists, skipping", file=sys.stderr)
             continue
 
-        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="elu",
+        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="relu",
                               graph_layers=graph_layers, graph_activation=graph_activation,
                               batch_normalisation=True, dropout=0.05)
 

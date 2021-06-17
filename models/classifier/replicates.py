@@ -41,7 +41,7 @@ def main():
             print(f"Model {model_dir} already exists, skipping", file=sys.stderr)
             continue
 
-        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="elu",
+        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="relu",
                               batch_normalisation=True, dropout=0.05)
 
         optimiser = optimizers.Adam(lr=0.01, epsilon=0.01)

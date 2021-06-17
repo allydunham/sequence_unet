@@ -56,7 +56,7 @@ def main():
             continue
 
         model = sequence_unet(filters=48, kernel_size=9, num_layers=6,
-                              batch_normalisation=True, dropout=0.05, conv_activation="elu")
+                              batch_normalisation=True, dropout=0.05, conv_activation="relu")
 
         optimiser = optimizers.Adam(lr=0.01, epsilon=0.01)
         loss = metrics.WeightedMaskedBinaryCrossEntropy(pos_weight=pos_weight,
