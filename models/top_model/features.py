@@ -109,7 +109,7 @@ def main():
         command = utils.model_bsub(f"features_{name}", model_dir,
                                     ram=10000, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf',
-                                    finetune=finetune)
+                                    finetune=finetune, early_stop=10)
 
         # Use this to setup a model directory for the experiment(s)
         utils.make_experiment_dir(model, model_dir, load_data, command, save_format='tf')

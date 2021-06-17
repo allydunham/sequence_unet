@@ -47,13 +47,15 @@ def main():
         (48, 5, 4),
         (16, 7, 4),
         (16, 9, 4),
+        (64, 9, 4),
         (16, 5, 6),
         (32, 3, 6),
         (32, 5, 6),
         (32, 7, 6),
         (32, 9, 6),
         (48, 9, 6),
-        (64, 9, 4),
+        (64, 9, 6),
+        (96, 9, 6),
     )
 
     for filters, kernel, layers in size:
@@ -74,8 +76,9 @@ def main():
         load_data = make_load_data(num_layers=layers)
 
         # Create sample train script
+        ram = 10000 if filters < 50 else 15000
         command = utils.model_bsub(f"size_f{filters}_k{kernel}_l{layers}", model_dir,
-                                    ram=10000, epochs=150, validation_epochs=1,
+                                    ram=ram, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)
