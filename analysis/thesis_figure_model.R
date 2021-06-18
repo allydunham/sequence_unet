@@ -28,18 +28,22 @@ training_logs <- read_tsv("data/freq/training_logs.tsv") %>%
 #   summarise(mean = mean(value), var = var(value))
 
 p_train_activation <- filter(training_logs, experiment == "activation", metric == "epoch_masked_accuracy", dataset == "validation") %>%
-  filter(step == max(step)) %>%
+  group_by(model) %>%
+  filter(step == step[which.max(value)]) %>%
+  ungroup() %>%
   ggplot(aes(x = reorder(model, value), y = value)) +
   geom_point(shape = 20, colour = "#66c2a5") +
   coord_flip(clip = "off") +
   scale_x_discrete(labels = c(elu = "ELU", hard_sigmoid = "Hard Sigmoid", relu = "ReLU", swish = "Swish", tanh = "Tanh")) +
-  scale_y_continuous(limits = c(0.725, 0.7465), labels = function(x) str_remove(x, "0*^")) +
+  scale_y_continuous(limits = c(0.725, 0.75), labels = function(x) str_remove(x, "0*^")) +
   labs(x = "", y = "Accuracy") +
   theme(panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
         panel.grid.major.y = element_blank())
 
 training_log_size <- filter(training_logs, experiment == "size", dataset == "validation") %>%
-  filter(step == max(step)) %>%
+  group_by(model) %>%
+  filter(step == step[which.max(value)]) %>%
+  ungroup() %>%
   extract(model, c("filters", "kernel_size", "layers"), "f([0-9]*)_k([0-9]*)_l([0-9]*)", convert = TRUE)
 
 p_train_filters <- filter(training_log_size, layers == 6, kernel_size == 9, metric == "epoch_masked_accuracy") %>%
@@ -60,7 +64,9 @@ p_train_layers <- filter(training_log_size, filters == 32, kernel_size == 5, met
   coord_cartesian(clip = "off") +labs(x = "Layers", y = "Accuracy")
 
 p_train_structure <- filter(training_logs, experiment == "structure", metric == "epoch_masked_accuracy", dataset == "validation") %>%
-  filter(step == max(step)) %>%
+  group_by(model) %>%
+  filter(step == step[which.max(value)]) %>%
+  ungroup() %>%
   separate(model, c("activation", "layers"), extra = "merge") %>%
   mutate(nlayers = ifelse(layers == "none", 0, str_count(layers, "_") + 1)) %>%
   filter(activation != "relu", str_starts(layers, "none|32")) %>%
