@@ -52,7 +52,7 @@ def model_bsub(model_name, model_dir, big_job=False, ram=None,
                f'-v {validation_epochs}',
                '-t' if tensorboard else '',
                f'-c {checkpoint}' if checkpoint else '',
-               f'-s {early_stop}' if early_stop else '',
+               f'-a {early_stop}' if early_stop else '',
                f'{model_dir}/model.{save_format}']
     command = [x for x in command if x]
 
