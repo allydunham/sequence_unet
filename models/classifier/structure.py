@@ -61,7 +61,7 @@ def main():
             print(f"Model {model_dir} already exists, skipping", file=sys.stderr)
             continue
 
-        model = sequence_unet(filters=48, kernel_size=9, num_layers=6, conv_activation="relu",
+        model = sequence_unet(filters=96, kernel_size=9, num_layers=6, conv_activation="relu",
                               graph_layers=graph_layers, graph_activation=graph_activation,
                               batch_normalisation=True, dropout=0.05)
 
@@ -74,8 +74,9 @@ def main():
 
         # Create sample train script
         command = utils.model_bsub(f"structure_{graph_activation}_{layer_str}", model_dir,
-                                    ram=15000, epochs=150, validation_epochs=1,
-                                    checkpoint=None, big_job=True, save_format='tf')
+                                    ram=20000, epochs=150, validation_epochs=1,
+                                    checkpoint=None, big_job=True, save_format='tf',
+                                    early_stop=20)
 
         # Use this to setup a model directory for the experiment(s)
         utils.make_experiment_dir(model, model_dir, load_data, command, save_format='tf')

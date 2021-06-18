@@ -46,10 +46,10 @@ def main():
     if not os.path.isdir(root):
         os.mkdir(root)
 
-    freq_model = "models/classifier/size/f48_k9_l6/model.tf"
+    freq_model = "models/classifier/size/f96_k9_l6/model.tf"
     freq_struct_model = "models/classifier/structure/elu_32/model.tf"
 
-    pssm_model = "models/pssm/size/f48_k9/model.tf"
+    pssm_model = "models/pssm/size/f96_k9/model.tf"
     pssm_struct_model = "models/pssm/structure/32/model.tf"
 
     # name: args
@@ -107,7 +107,7 @@ def main():
         # Create sample train script
         finetune = None if args["bottom_model"] is None else 2 + args["tune_layers"]
         command = utils.model_bsub(f"features_{name}", model_dir,
-                                    ram=10000, epochs=150, validation_epochs=1,
+                                    ram=15000, epochs=150, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf',
                                     finetune=finetune, early_stop=10)
 
