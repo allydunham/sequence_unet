@@ -44,9 +44,9 @@ def main():
 
 
     models = {
-        "pssm_sequence": "models/pssm/size/f96_k9/model.tf",
+        "pssm_sequence": "models/pssm/size/f64_k9/model.tf",
         "pssm_structure": "models/pssm/structure/32/model.tf",
-        "classifier_sequence": "models/classifier/size/f96_k9_l6/model.tf",
+        "classifier_sequence": "models/classifier/size/f64_k9_l6/model.tf",
         "classifier_structure": "models/classifier/structure/elu_32/model.tf"
     }
 

@@ -46,10 +46,10 @@ def main():
     if not os.path.isdir(root):
         os.mkdir(root)
 
-    freq_model = "models/classifier/size/f96_k9_l6/model.tf"
+    freq_model = "models/classifier/size/f64_k9_l6/model.tf"
     freq_struct_model = "models/classifier/structure/elu_32/model.tf"
 
-    pssm_model = "models/pssm/size/f96_k9/model.tf"
+    pssm_model = "models/pssm/size/f64_k9/model.tf"
     pssm_struct_model = "models/pssm/structure/32/model.tf"
 
     # name: args

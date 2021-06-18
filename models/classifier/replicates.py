@@ -51,7 +51,7 @@ def main():
 
         # Create sample train script
         command = utils.model_bsub(f"rep_{i}", model_dir,
-                                    ram=15000, epochs=100, validation_epochs=1,
+                                    ram=10000, epochs=100, validation_epochs=1,
                                     checkpoint=None, big_job=True, save_format='tf')
 
         # Use this to setup a model directory for the experiment(s)
