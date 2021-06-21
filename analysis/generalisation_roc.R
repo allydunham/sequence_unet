@@ -9,9 +9,10 @@ import_dms <- function() {
     select(gene, position, wt, mut, SIFT4G=sift, FoldX = total_energy) %>%
     mutate(gene = str_to_lower(str_remove_all(gene, " ")))
   preds <- bind_rows(
-    `Baseline Clinvar` = read_tsv("data/dms/preds/baseline_clinvar.tsv"),
-    `Baseline Freq` = read_tsv("data/dms/preds/baseline_freq.tsv"),
-    `UNET Top` = read_tsv("data/dms/preds/clinvar_top.tsv"),
+    `Baseline ClinVar` = read_tsv("data/dms/preds/baseline_clinvar.tsv"),
+    `Baseline Frequency` = read_tsv("data/dms/preds/baseline_freq.tsv"),
+    `UNET (Top)` = read_tsv("data/dms/preds/clinvar_top.tsv"),
+    `UNET (Finetune)` = read_tsv("data/dms/preds/clinvar_finetune.tsv"),
     `UNET` = read_tsv("data/dms/preds/unet_freq.tsv"),
     .id = "model"
   ) %>% pivot_wider(names_from = model, values_from = pred)
@@ -32,9 +33,10 @@ import_jelier <- function() {
     rename(SIFT4G = sift_score, FoldX = foldx)
   
   bind_rows(
-    `Baseline Clinvar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),
-    `Baseline Freq` = read_tsv("data/jelier/preds/baseline_freq.tsv"),
-    `UNET Top` = read_tsv("data/jelier/preds/clinvar_top.tsv"),
+    `Baseline ClinVar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),
+    `Baseline Frequency` = read_tsv("data/jelier/preds/baseline_freq.tsv"),
+    `UNET (Top)` = read_tsv("data/jelier/preds/clinvar_top.tsv"),
+    `UNET (Finetune)` = read_tsv("data/jelier/preds/clinvar_finetune.tsv"),
     `UNET` = read_tsv("data/jelier/preds/unet_freq.tsv"),
     .id = "model"
   ) %>%
