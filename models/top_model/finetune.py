@@ -73,8 +73,8 @@ def main():
                                     validation_epochs=1, checkpoint=None, big_job=True,
                                     save_format='tf', finetune=2, early_stop=10)
 
-        # Use this to setup a model directory for the experiment(s)
-        utils.make_experiment_dir(model, model_dir, load_data, command, save_format='tf')
+            # Use this to setup a model directory for the experiment(s)
+            utils.make_experiment_dir(model, model_dir, load_data, command, save_format='tf')
 
 if __name__ == "__main__":
     # No argparse as these scripts serve as the config for experiments
