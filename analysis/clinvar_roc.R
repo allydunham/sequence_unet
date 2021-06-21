@@ -23,6 +23,8 @@ preds <- bind_rows(
   `Baseline ClinVar` = read_tsv("data/clinvar/preds/baseline_clinvar.tsv"),
   `UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_features_top.tsv"),
   `PreGraph UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_structure_features_top.tsv"),
+  `UNET (Finetune)` = read_tsv("data/clinvar/preds/unet_freq_finetune.tsv"),
+  `PreGraph UNET (Finetune)` = read_tsv("data/clinvar/preds/unet_freq_structure_finetune.tsv"),
   .id = "model"
 ) %>%
   select(-wt) %>%
@@ -45,12 +47,12 @@ plots$roc <- ggplot(roc, aes(x = fpr, y = tpr, colour = model_auc)) +
   geom_abline(slope = 1, linetype = 'dashed', colour = 'black') +
   geom_step(direction = "hv") +
   labs(x = 'False Positive Rate', y = 'True Positive Rate') +
-  scale_colour_brewer(type = 'qual', palette = 'Set1', name = '')
+  scale_colour_brewer(type = 'qual', palette = 'Set3', name = '')
 
 plots$pr <- ggplot(roc, aes(x = tpr, y = precision, colour = model)) + 
     geom_hline(yintercept = 0.5, linetype = 'dashed', colour = 'black') +
     geom_line() +
     labs(x = 'Recall', y = 'Precision') +
-    scale_colour_brewer(type = 'qual', palette = 'Set1', name = '')
+    scale_colour_brewer(type = 'qual', palette = 'Set3', name = '')
   
 save_plotlist(plots, "figures/clinvar_unet/", overwrite = "all")
