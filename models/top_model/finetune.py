@@ -43,7 +43,7 @@ def main():
         os.mkdir(root)
 
 
-    models = {
+    mods = {
         "pssm_sequence": "models/pssm/size/f64_k9/model.tf",
         "pssm_structure": "models/pssm/structure/32/model.tf",
         "classifier_sequence": "models/classifier/size/f64_k9_l6/model.tf",
@@ -51,7 +51,7 @@ def main():
     }
 
     for weighted in [True, False]:
-        for name, model_path in models.items():
+        for name, model_path in mods.items():
             model_dir = f"{root}/{name}{'_weighted' if weighted else ''}"
             if os.path.isdir(model_dir):
                 raise FileExistsError(f"Model {model_dir} already exists, skipping")
@@ -61,7 +61,7 @@ def main():
             optimiser = optimizers.Adam(lr=0.001, epsilon=0.01)
             acc = metrics.masked_accuracy
 
-            if weighted in name:
+            if weighted:
                 loss = metrics.WeightedMaskedBinaryCrossEntropy(pos_weight=1, neg_weight=3.26)
             else:
                 loss = metrics.masked_binary_crossentropy
