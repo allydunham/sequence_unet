@@ -69,6 +69,70 @@ class SequenceUNETMapFunction(LabeledFunction):
         else:
             return out, labels
 
+class MaskedSequenceMapFunction(LabeledFunction):
+    """
+    ProteinNetMapFunction returning sequences with masked positions and the true AAs in those
+    positions. This is used to train a generalisable base for the sequence UNET model
+
+    num_layers: number of layers in the SequenceUNET model, used to 0 pad output so it can be
+                halved an appropriate number of times.
+    contact_graph: Include contact graph input
+    mask: Number of positions to mask. Treated as an absolute if an integer or a proportion
+          if a float.
+    """
+    def __init__(self, num_layers=4, contact_graph=False, mask=5):
+        self.num_layers = num_layers
+        self.contact_graph = contact_graph
+        self.mask = mask
+
+        if isinstance(self.mask, int):
+            self.int_mask = True
+        elif isinstance(self.mask, float):
+            self.int_mask = False
+        else:
+            raise TypeError(f"mask must be an int or float, recieved {mask}")
+
+        output_shapes = ([None, 20], [None, None]) if self.contact_graph else ([None, 20],)
+        output_types = ('float32', 'float32') if self.contact_graph else ('float32',)
+
+        output_shapes = [output_shapes, [None, 20], [None]]
+        output_types = [output_types, 'float32', 'float32']
+
+        self.output_shapes = tuple(output_shapes)
+        self.output_types = tuple(output_types)
+
+    def __call__(self, record):
+        seq = record.get_one_hot_sequence().T
+        labels = np.copy(seq)
+        length = seq.shape[0]
+        weights = np.zeros(length)
+
+        # Mask sequences
+        n_masked = self.mask if self.int_mask else int(self.mask * length)
+        masked_positions = np.random.choice(length, n_masked, replace=False)
+        seq[masked_positions, :] = 0
+        weights[masked_positions] = 1
+
+        # Need to make sure output can be halved a sufficient number of time
+        pad_rows = 2 ** (self.num_layers - 1) - length % 2 ** (self.num_layers - 1)
+        if pad_rows:
+            seq = np.pad(seq, ((0, pad_rows), (0, 0)), mode='constant')
+            labels = np.pad(labels, ((0, pad_rows), (0, 0)), mode='constant')
+            weights = np.pad(weights, (0, pad_rows), mode='constant')
+
+        # Generate contact graph
+        # TODO Should this be masked?
+        if self.contact_graph:
+            contacts = contact_graph(record)
+            if pad_rows:
+                contacts = np.pad(contacts, ((0, pad_rows), (0, pad_rows)), mode='constant')
+            out = (seq, contacts)
+        else:
+            out = (seq,)
+
+        return out, labels, weights
+
+
 class ClinVarMapFunction(LabeledFunction):
     """
     ProteinNetMapFunction returning the required data for the Mutation PSSM Top model
