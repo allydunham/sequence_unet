@@ -2,20 +2,6 @@
 # Generate thesis figure on the basic model
 source('src/config.R')
 source("src/analysis.R")
-library(png)
-
-#### Panel - Model Structure ####
-model_png <- readPNG("figures/model_schematic.png")
-p_model <- ggplot() +
-  geom_blank() +
-  coord_cartesian(expand = FALSE) +
-  annotation_raster(model_png, interpolate = TRUE, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
-  theme(axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.grid.major.y = element_blank(),
-        plot.margin = unit(c(1,1,1,1), "mm"))
 
 #### Panel - Training ####
 training_logs <- read_tsv("data/freq/training_logs.tsv") %>%
@@ -27,15 +13,25 @@ training_logs <- read_tsv("data/freq/training_logs.tsv") %>%
 #   group_by(dataset, metric) %>% 
 #   summarise(mean = mean(value), var = var(value))
 
+p_train_threshold <- filter(training_logs, experiment == "threshold", metric == "epoch_masked_accuracy", dataset == "validation") %>% 
+  group_by(model) %>%
+  filter(step == step[which.max(value)]) %>%
+  ungroup() %>%
+  mutate(model = str_remove(model, "t")) %>%
+  ggplot(aes(x = model, y = value)) +
+  geom_point(shape = 20, colour = "#e41a1c") +
+  scale_y_continuous(limits = c(0.75, 0.9), labels = function(x) str_remove(x, "0*^")) +
+  labs(x = "Frequency Threshold", y = "Accuracy")
+
 p_train_activation <- filter(training_logs, experiment == "activation", metric == "epoch_masked_accuracy", dataset == "validation") %>%
   group_by(model) %>%
   filter(step == step[which.max(value)]) %>%
   ungroup() %>%
   ggplot(aes(x = reorder(model, value), y = value)) +
-  geom_point(shape = 20, colour = "#66c2a5") +
+  geom_point(shape = 20, colour = "#377eb8") +
   coord_flip(clip = "off") +
   scale_x_discrete(labels = c(elu = "ELU", hard_sigmoid = "Hard Sigmoid", relu = "ReLU", swish = "Swish", tanh = "Tanh")) +
-  scale_y_continuous(limits = c(0.725, 0.75), labels = function(x) str_remove(x, "0*^")) +
+  scale_y_continuous(limits = c(0.73, 0.75), labels = function(x) str_remove(x, "0*^")) +
   labs(x = "", y = "Accuracy") +
   theme(panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
         panel.grid.major.y = element_blank())
@@ -48,18 +44,18 @@ training_log_size <- filter(training_logs, experiment == "size", dataset == "val
 
 p_train_filters <- filter(training_log_size, layers == 6, kernel_size == 9, metric == "epoch_masked_accuracy") %>%
   ggplot(aes(x = filters, y = value)) +
-  geom_point(shape = 20, colour = "#fc8d62") +
+  geom_point(shape = 20, colour = "#4daf4a") +
   coord_cartesian(clip = "off") +labs(x = "Base CNN Filters", y = "Accuracy")
 
 p_train_kernel <- filter(training_log_size, layers == 6, filters == 32, metric == "epoch_masked_accuracy") %>%
   ggplot(aes(x = kernel_size, y = value)) +
-  geom_point(shape = 20, colour = "#8da0cb") +
+  geom_point(shape = 20, colour = "#984ea3") +
   scale_x_continuous(breaks = c(3,5,7,9)) +
   coord_cartesian(clip = "off") +labs(x = "Kernel Size", y = "Accuracy")
 
 p_train_layers <- filter(training_log_size, filters == 32, kernel_size == 5, metric == "epoch_masked_accuracy") %>%
   ggplot(aes(x = layers, y = value)) +
-  geom_point(shape = 20, colour = "#e78ac3") +
+  geom_point(shape = 20, colour = "#ff7f00") +
   scale_x_continuous(breaks = c(2,4,6)) +
   coord_cartesian(clip = "off") +labs(x = "Layers", y = "Accuracy")
 
@@ -71,7 +67,7 @@ p_train_structure <- filter(training_logs, experiment == "structure", metric == 
   mutate(nlayers = ifelse(layers == "none", 0, str_count(layers, "_") + 1)) %>%
   filter(activation != "relu", str_starts(layers, "none|32")) %>%
   ggplot(aes(x = nlayers, y = value)) +
-  geom_point(shape = 20, colour = "#a6d854") +
+  geom_point(shape = 20, colour = "#a65628") +
   coord_cartesian(clip = "off") +
   labs(x = "Graph Layers", y = "Accuracy")
 
@@ -109,9 +105,11 @@ p_pssm_pred <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
   scale_fill_gradient2(name = "Pred - True", low = "#b2182b", high = "#2166ac") +
   scale_x_continuous(expand = expansion(0)) +
+  guides(fill = guide_colourbar(barheight = unit(3, "mm"), title.vjust = 1)) +
   labs(x = "Position", y = "") +
   theme(panel.grid.major.y = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank(),
+        legend.position = "top")
 
 #### Panel - PSSM Prediction Performance ####
 pssm_models <- read_tsv("data/pssm/combined_preds.tsv")
@@ -163,31 +161,30 @@ p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
 
 #### Figure Assembly ####
 size <- theme(text = element_text(size = 9))
-p1 <- p_model + labs(tag = 'A') + size
-
+p1 <- p_train_threshold + labs(tag = 'A') + size
 p2 <- p_train_activation + labs(tag = 'B') + size
-p3 <- p_train_filters + labs(tag = ' ') + size
-p4 <- p_train_kernel + labs(tag = ' ') + size
-p5 <- p_train_layers + labs(tag = ' ') + size
-p6 <- p_train_structure + labs(tag = ' ') + size
+p3 <- p_train_filters + labs(tag = 'C') + size
+p4 <- p_train_kernel + labs(tag = 'D') + size
+p5 <- p_train_layers + labs(tag = 'E') + size
+p6 <- p_train_structure + labs(tag = 'F') + size
 
-p7 <- p_classifier + labs(tag = 'C') + size
-p8 <- p_pssm_pred + labs(tag = 'D') + size
-p9 <- p_pssm_cor + labs(tag = 'E') + size
-p10 <- p_pssm_summary + labs(tag = 'F') + size
+p7 <- p_classifier + labs(tag = 'G') + size
+p8 <- p_pssm_pred + labs(tag = 'H') + size
+p9 <- p_pssm_cor + labs(tag = 'I') + size
+p10 <- p_pssm_summary + labs(tag = 'J') + size
 
-figure <- multi_panel_figure(width = 180, height = 240, columns = 6, rows = 6,
+figure <- multi_panel_figure(width = c(30, 30, 30, 30, 30, 30), height = c(40, 40, 80, 40),
                              panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
-  fill_panel(p1, row = 1:2, column = 1:6) %>%
-  fill_panel(p2, row = 3, column = 1:2) %>%
-  fill_panel(p3, row = 3, column = 3) %>%
-  fill_panel(p4, row = 4, column = 1) %>%
-  fill_panel(p5, row = 4, column = 2) %>%
-  fill_panel(p6, row = 4, column = 3) %>%
-  fill_panel(p7, row = 3:4, column = 4:6) %>%
-  fill_panel(p8, row = 5:6, column = 1:3) %>%
-  fill_panel(p9, row = 5, column = 4:6) %>%
-  fill_panel(p10, row = 6, column = 4:6)
+  fill_panel(p1, row = 1, column = 1:2) %>%
+  fill_panel(p2, row = 1, column = 3:4) %>%
+  fill_panel(p3, row = 1, column = 5:6) %>%
+  fill_panel(p4, row = 2, column = 1:2) %>%
+  fill_panel(p5, row = 2, column = 3:4) %>%
+  fill_panel(p6, row = 2, column = 5:6) %>%
+  fill_panel(p7, row = 3, column = 1:3) %>%
+  fill_panel(p8, row = 3, column = 4:6) %>%
+  fill_panel(p9, row = 4, column = 1:3) %>%
+  fill_panel(p10, row = 4, column = 4:6)
 
 ggsave('figures/thesis_figure_model.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm', device = cairo_pdf)
 ggsave('figures/thesis_figure_model.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
