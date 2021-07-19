@@ -13,7 +13,6 @@ from proteinnetpy.data import make_length_filter, combine_filters, make_id_filte
 
 import metrics
 import pn_maps
-from top_model import top_model
 
 def load_data(validation=False):
     """
