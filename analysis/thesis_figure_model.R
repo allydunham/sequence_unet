@@ -112,7 +112,8 @@ p_pssm_pred <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
         legend.position = "top")
 
 #### Panel - PSSM Prediction Performance ####
-pssm_models <- read_tsv("data/pssm/combined_preds.tsv")
+pssm_models <- read_tsv("data/pssm/combined_preds.tsv") %>%
+  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "UNET", "PreGraph UNET")))
 
 pssm_cor <- group_by(pssm_models, model) %>%
   group_modify(~broom::tidy(cor.test(.$pred, .$true)))

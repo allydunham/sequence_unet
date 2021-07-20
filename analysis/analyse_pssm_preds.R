@@ -30,12 +30,12 @@ models$SPBuild <- extract(models$SPBuild, protein, into = c("pdb_id", "chain"), 
   drop_na()
 
 models$UNET <- mutate(models$UNET, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
-models$`UNET Structure` <- mutate(models$`PreGraph UNET`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
+models$`PreGraph UNET` <- mutate(models$`PreGraph UNET`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
 
 models <- bind_rows(models, .id = 'model') %>%
   pivot_wider(names_from = 'model', values_from = 'pred') %>%
   left_join(blosum, by = c('wt', 'mut')) %>%
-  pivot_longer(c(SPBuild, UNET, BLOSUM62, `UNET Structure`), names_to = 'model', values_to = 'pred') %>%
+  pivot_longer(c(SPBuild, UNET, BLOSUM62, `PreGraph UNET`), names_to = 'model', values_to = 'pred') %>%
   rename(true = ProteinNet) %>%
   mutate(diff = pred - true)
 write_tsv(models, "data/pssm/combined_preds.tsv")
