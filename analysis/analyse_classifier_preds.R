@@ -9,7 +9,6 @@ plots <- list()
 blosum <- as_tibble(BLOSUM62, rownames = 'wt') %>%
   pivot_longer(-wt, names_to = 'mut', values_to = 'BLOSUM62')
 
-read_tsv("data/freq/sift_test/FM#T0859.SIFTprediction")
 read_sift <- function(x) {
   protein <- str_split(basename(x), "\\.", simplify = TRUE)[1,1]
   col_names <- c("A", "B", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M",
@@ -27,9 +26,11 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
   select(protein, position, wt, A:Y) %>%
   pivot_longer(A:Y, names_to = "mut", values_to = "freq") %>%
   mutate(deleterious = freq < 0.01) %>%
-  left_join(select(read_tsv('data/freq/unet_sequence_testing.tsv'), protein = pdb_id, position, wt, mut, UNET=pred),
+  left_join(select(read_tsv('data/freq/ unet_sequence_testing.tsv'), protein = pdb_id, position, wt, mut, UNET=pred),
             by = c("protein", "position", "wt", "mut")) %>%
   left_join(select(read_tsv('data/freq/unet_structure_testing.tsv'), protein = pdb_id, position, wt, mut, `PreGraph UNET`=pred),
+            by = c("protein", "position", "wt", "mut")) %>%
+  left_join(select(read_tsv('data/freq/baseline_testing.tsv'), protein = pdb_id, position, wt, mut, `Baseline CNN`=pred),
             by = c("protein", "position", "wt", "mut")) %>%
   left_join(blosum, by = c("wt", "mut")) %>%
   left_join(sift, by = c("protein", "position", "mut")) %>%

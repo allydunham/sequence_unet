@@ -84,7 +84,8 @@ p_performance <- ggplot(clinvar_acc, aes(x = model, y = value, fill = model)) +
 
 #### Panel - ClinVar ROC ####
 clinvar_roc <- read_tsv("data/clinvar/roc.tsv") %>%
-  mutate(model_auc = auc_labeled_model(model, auc))
+  mutate(model_auc = auc_labeled_model(model, auc)) %>%
+  filter(!str_detect(model, "Thresh"))
 
 clinvar_auc <- distinct(clinvar_roc, model, model_auc, auc) %>%
   arrange(desc(auc)) %>%
