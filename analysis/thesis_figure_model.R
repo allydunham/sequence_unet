@@ -77,7 +77,7 @@ classifier_roc <- read_tsv("data/freq/roc.tsv") %>%
 
 classifier_auc <- distinct(classifier_roc, model_auc, auc) %>%
   arrange(desc(auc)) %>%
-  mutate(fpr = 1, tpr = c(0.2, 0.15, 0.1, 0.05))
+  mutate(fpr = 1, tpr = c(0.27, 0.22, 0.17, 0.12, 0.07))
 
 p_classifier <- ggplot(classifier_roc, aes(x = fpr, y = tpr, colour = model_auc, label = model_auc)) +
   geom_step(show.legend = FALSE) +
@@ -113,7 +113,7 @@ p_pssm_pred <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
 
 #### Panel - PSSM Prediction Performance ####
 pssm_models <- read_tsv("data/pssm/combined_preds.tsv") %>%
-  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "UNET", "PreGraph UNET")))
+  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "Baseline CNN", "UNET", "PreGraph UNET")))
 
 pssm_cor <- group_by(pssm_models, model) %>%
   group_modify(~broom::tidy(cor.test(.$pred, .$true)))
@@ -148,9 +148,9 @@ pssm_summary <- drop_na(pssm_models) %>%
 p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
   geom_col(position = 'dodge') +
   coord_flip() +
-  scale_fill_brewer(name = '', type = 'qual', palette = 'Dark2', guide = guide_legend(reverse = TRUE)) +
+  scale_fill_brewer(name = '', type = 'qual', palette = 'Dark2', guide = FALSE) +
   labs(x = '', y = 'Proportion of Predictions') +
-  scale_x_discrete(labels = c(good='|Pred - True| <= 1', best='Best Model', best_good='Both')) +
+  scale_x_discrete(labels = c(good='|Pred - True| ≤ 1', best='Best Model', best_good='Both')) +
   theme(axis.text.x = element_markdown(),
         axis.ticks.x = element_blank(),
         panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),

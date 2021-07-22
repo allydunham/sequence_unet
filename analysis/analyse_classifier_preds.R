@@ -26,7 +26,7 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
   select(protein, position, wt, A:Y) %>%
   pivot_longer(A:Y, names_to = "mut", values_to = "freq") %>%
   mutate(deleterious = freq < 0.01) %>%
-  left_join(select(read_tsv('data/freq/ unet_sequence_testing.tsv'), protein = pdb_id, position, wt, mut, UNET=pred),
+  left_join(select(read_tsv('data/freq/unet_sequence_testing.tsv'), protein = pdb_id, position, wt, mut, UNET=pred),
             by = c("protein", "position", "wt", "mut")) %>%
   left_join(select(read_tsv('data/freq/unet_structure_testing.tsv'), protein = pdb_id, position, wt, mut, `PreGraph UNET`=pred),
             by = c("protein", "position", "wt", "mut")) %>%
@@ -37,7 +37,7 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
   pivot_longer(c(UNET:SIFT4G), names_to = "model", values_to = "pred")
 
 ### Analyse ###
-greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, BLOSUM62 = FALSE)
+greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, BLOSUM62 = FALSE, `Baseline CNN` = TRUE)
 roc <- group_by(models, model) %>%
   group_modify(~calc_roc(., deleterious, pred, greater = greater[.y$model], max_steps = 6000)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
