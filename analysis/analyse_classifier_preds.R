@@ -35,6 +35,7 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
   left_join(blosum, by = c("wt", "mut")) %>%
   left_join(sift, by = c("protein", "position", "mut")) %>%
   pivot_longer(c(UNET:SIFT4G), names_to = "model", values_to = "pred")
+write_tsv(models, "data/freq/all_model_testing.tsv")
 
 ### Analyse ###
 greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, BLOSUM62 = FALSE, `Baseline CNN` = TRUE)

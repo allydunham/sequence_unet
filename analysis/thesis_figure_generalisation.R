@@ -59,18 +59,17 @@ clinvar_acc <- bind_rows(
   summarise(tp = sum(pred & true),
             tn = sum(!pred & !true),
             fp = sum(pred & !true),
-            fn = sum(!pred & true),
-            pe = sum(true) / n()) %>%
+            fn = sum(!pred & true)) %>%
     mutate(accuracy = (tp + tn) / (tp + tn + fp + fn),
            f1 = 2 * tp / (2 * tp + fp + fn),
-           kappa = (accuracy - pe) / (1 - pe),
+           kappa = 2 * (tp * tn - fn * fp) / ((tp + fp) * (fp + tn) + (tp + fn) * (fn + tn)),
            model = factor(model, levels = rev(names(model_colours)))) %>%
     select(model, accuracy, f1, kappa) %>%
     pivot_longer(-model, names_to = "metric", values_to = "value")
 
 p_performance <- ggplot(clinvar_acc, aes(x = model, y = value, fill = model)) +
   facet_wrap(~metric, scales = "free_x", strip.position = "bottom", nrow = 1,
-             labeller = as_labeller(c(accuracy = "Accuracy", f1 = "F1 Score", kappa = "Cohen's Kappa"))) +
+             labeller = as_labeller(c(accuracy = "Accuracy", f1 = "F1 Score", kappa = "Cohen's &kappa;"))) +
   coord_flip() +
   geom_col(width = 0.7, show.legend = FALSE) +
   scale_fill_manual(values = model_colours) +
@@ -80,7 +79,7 @@ p_performance <- ggplot(clinvar_acc, aes(x = model, y = value, fill = model)) +
         axis.ticks.y = element_blank(),
         panel.spacing = unit(2, "mm"),
         strip.placement = "outside",
-        strip.text = element_text(margin = margin(0, 0, 0, 0, unit = "mm")))
+        strip.text = element_markdown(margin = margin(0, 0, 0, 0, unit = "mm")))
 
 #### Panel - ClinVar ROC ####
 clinvar_roc <- read_tsv("data/clinvar/roc.tsv") %>%
@@ -117,17 +116,19 @@ p_generalisation <- ggplot(gen_roc, aes(x = model, y = auc, fill = model)) +
         axis.title.y = element_blank())
 
 #### Figure Assembly ####
-size <- theme(text = element_text(size = 9))
+size <- theme(text = element_text(size = 11))
 p1 <- p_preds + labs(tag = 'A') + size
 p2 <- p_performance + labs(tag = 'B') + size
 p3 <- p_clinvar + labs(tag = 'C') + size
 p4 <- p_generalisation + labs(tag = 'D') + size
 
-figure <- multi_panel_figure(width = c(90, 90), height = c(45, 45, 90), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
+figure <- multi_panel_figure(width = c(90, 90), height = c(45, 55, 90), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
   fill_panel(p1, row = 1, column = 1:2) %>%
   fill_panel(p2, row = 2, column = 1:2) %>%
   fill_panel(p3, row = 3, column = 1) %>%
   fill_panel(p4, row = 3, column = 2)
 
-ggsave('figures/thesis_figure_generalisation.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm', device = cairo_pdf)
+ggsave('figures/thesis_figure_generalisation.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm',
+       device = cairo_pdf)
 ggsave('figures/thesis_figure_generalisation.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figure_generalisation.png', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
