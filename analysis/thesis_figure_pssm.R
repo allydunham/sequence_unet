@@ -3,6 +3,13 @@
 source('src/config.R')
 source("src/analysis.R")
 
+tool_colours <- c(`PreGraph UNET`="#39f0f5",
+                  UNET="#1f78b4",
+                  `Baseline CNN`="#ff7f00",
+                  BLOSUM62="#717171",
+                  SIFT4G="#33a02c",
+                  SPBuild="#f300ff")
+
 #### Panel - PSSM Prediction ####
 pssm_preds <- bind_rows(
   true = read_tsv('data/pssm/pn_casp12_validation.tsv') %>%
@@ -39,7 +46,7 @@ p_pssm_cor <- ggplot(pssm_cor, aes(x = model, y = estimate, fill = model, ymin =
   geom_col(width = 0.6, show.legend = FALSE) +
   geom_errorbar(width = 0.5) +
   coord_flip() +
-  scale_fill_brewer(name = 'Model', type = 'qual', palette = 'Dark2') +
+  scale_fill_manual(name = 'Model', values = tool_colours) +
   labs(y = "Pearson Correlation Coefficient") +
   theme(axis.title.y = element_blank(),
         panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
@@ -65,7 +72,7 @@ pssm_summary <- drop_na(pssm_models) %>%
 p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
   geom_col(position = 'dodge', width = 0.75) +
   coord_flip() +
-  scale_fill_brewer(name = '', type = 'qual', palette = 'Dark2', guide = FALSE) +
+  scale_fill_manual(name = '', values = tool_colours, guide = FALSE) +
   labs(x = '', y = 'Proportion of Predictions') +
   scale_x_discrete(labels = c(good='|Pred - True| ≤ 1', best='Best Model', best_good='Both')) +
   theme(axis.text.x = element_markdown(),

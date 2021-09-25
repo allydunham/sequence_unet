@@ -4,8 +4,8 @@ source('src/config.R')
 source("src/analysis.R")
 
 model_colours <- c(`Baseline ClinVar` = "#ff7f00", `Baseline Frequency` = "#fdbf6f",
-                   `SIFT4G` = "#33a02c", `FoldX` = "#b2df8a", BLOSUM62 = "grey",
-                   `UNET` = "#1f78b4", `PreGraph UNET` = "#a6cee3", 
+                   `SIFT4G` = "#33a02c", `FoldX` = "#b2df8a", BLOSUM62 = "#717171",
+                   `UNET` = "#1f78b4", `PreGraph UNET` = "#39f0f5", 
                    `UNET (Finetune)` = "#e31a1c", `PreGraph UNET (Finetune)` = "#fb9a99", 
                    `UNET (Top)` = "#6a3d9a", `PreGraph UNET (Top)` = "#cab2d6")
 
