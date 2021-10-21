@@ -21,6 +21,7 @@ import sys
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
+from Bio import Alphabet
 from tensorflow.keras.models import load_model
 
 from pn_maps import SequenceUNETMapFunction, ClinVarMapFunction, one_hot_sequence, AMINO_ACIDS
@@ -34,9 +35,12 @@ def predict_fasta(model, fasta, layers, tsv=None):
     if tsv is not None:
         tsv = tsv[["gene", "position", "wt", "mut"]]
 
-    output = []
-    for seq in SeqIO.parse(fasta, format="fasta"):
-        one_hot = one_hot_sequence(seq)
+    for seq in SeqIO.parse(fasta, format="fasta", alphabet=Alphabet.IUPAC.IUPACProtein()):
+        try:
+            one_hot = one_hot_sequence(seq)
+        except KeyError as err:
+            print(f"Unknown amino acid in {seq.id} - {err}")
+            continue
 
         # Pad to be divisable
         pad_rows = 2 ** (layers - 1) - one_hot.shape[0] % 2 ** (layers - 1) if layers > 0 else 0
@@ -54,22 +58,15 @@ def predict_fasta(model, fasta, layers, tsv=None):
         df['wt'] = seq.seq
         df = df.melt(id_vars=["gene", "position", "wt"], var_name="mut", value_name="pred")
 
-        output.append(df[["gene", "position", "wt", "mut", "pred"]])
+        if tsv is not None:
+            df = df.merge(tsv, on=["gene", "position", "wt", "mut"], how="inner")
 
-    output = pd.concat(output, axis=0)
-    if tsv is not None:
-        output = output.merge(tsv, on=["gene", "position", "wt", "mut"], how="right")
-    return output
+        yield df[["gene", "position", "wt", "mut", "pred"]]
 
-# TODO maybe have to stream this if want to predict on larger datasets
-def predict_proteinnet(model, data, func, tsv=None):
+def predict_proteinnet(model, data, func):
     """
     Predict values from a ProteinNetDataset
     """
-    if tsv is not None:
-        tsv = tsv[["pdb_id", "chain", "position", "wt", "mut"]]
-
-    output = []
     for record in data:
         # Format model input
         try:
@@ -92,12 +89,7 @@ def predict_proteinnet(model, data, func, tsv=None):
         df = df.melt(id_vars=["pdb_id", "chain", "position", "wt"],
                      var_name="mut", value_name="pred")
 
-        output.append(df[["pdb_id", "chain", "position", "wt", "mut", "pred"]])
-
-    output = pd.concat(output, axis=0)
-    if tsv is not None:
-        output = output.merge(tsv, on=["pdb_id", "chain", "position", "wt", "mut"], how="right")
-    return output
+        yield df[["pdb_id", "chain", "position", "wt", "mut", "pred"]]
 
 def predict_clinvar(model, clinvar, proteinnet, layers, contact, pssm):
     """
@@ -141,7 +133,7 @@ def predict_clinvar(model, clinvar, proteinnet, layers, contact, pssm):
         output["mut"].extend(mut)
         output["pred"].extend(preds)
 
-    return pd.DataFrame(data=output)
+    yield pd.DataFrame(data=output)
 
 def main(args):
     """
@@ -159,8 +151,7 @@ def main(args):
         filter_func = make_id_filter(list(tsv.pdb_id), list(tsv.chain)) if tsv is not None else None
         data = ProteinNetDataset(path=args.proteinnet, preload=False, filter_func=filter_func)
         func = SequenceUNETMapFunction(num_layers=args.layers if args.layers else None,
-                                       contact_graph=args.contacts,
-                                       pssm=args.pssm)
+                                       contact_graph=args.contacts, pssm=args.pssm)
         preds = predict_proteinnet(model, data, func)
 
     elif args.fasta:
@@ -169,7 +160,8 @@ def main(args):
     else:
         raise ValueError("One of --fasta or --proteinnet must be passed")
 
-    preds.to_csv(sys.stdout, sep="\t", index=False)
+    for i, df in enumerate(preds):
+        df.to_csv(sys.stdout, sep="\t", index=False, header=i==0)
 
 def parse_args():
     """Process arguments"""
