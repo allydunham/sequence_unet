@@ -61,6 +61,8 @@ def predict_fasta(model, fasta, layers, tsv=None):
         if tsv is not None:
             df = df.merge(tsv, on=["gene", "position", "wt", "mut"], how="inner")
 
+        df = df.sort_values(by=["gene", "position", "wt", "mut"])
+
         yield df[["gene", "position", "wt", "mut", "pred"]]
 
 def predict_proteinnet(model, data, func):
@@ -88,6 +90,8 @@ def predict_proteinnet(model, data, func):
         df['wt'] = record.primary
         df = df.melt(id_vars=["pdb_id", "chain", "position", "wt"],
                      var_name="mut", value_name="pred")
+
+        df = df.sort_values(by=["pdb_id", "chain", "position", "wt", "mut"])
 
         yield df[["pdb_id", "chain", "position", "wt", "mut", "pred"]]
 
