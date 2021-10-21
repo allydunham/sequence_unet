@@ -8,7 +8,7 @@ ClinVar: Use --proteinnet path/to/protiennet, --clinvar and --tsv path/to/clinva
          the ClinVar TSV is formated like the output of extract_clinvar.R. The ProteinNet file
          must contain the PDB ids specified in the TSV for predictions to be generated for them.
 
-Fasta: Use --fasta path/to/fasta and optionally --tsv to specify a list of variants
+Fasta: U    se --fasta path/to/fasta and optionally --tsv to specify a list of variants
        to keep predictions for, where the TSV has columns gene, position, wt, mut and
        genes match the fasta IDs.
 
@@ -28,12 +28,16 @@ from pn_maps import SequenceUNETMapFunction, ClinVarMapFunction, one_hot_sequenc
 from proteinnetpy.data import ProteinNetDataset, make_id_filter
 from metrics import CUSTOM_OBJECTS
 
-def predict_fasta(model, fasta, layers, tsv=None):
+def predict_fasta(model, fasta, layers, tsv=None, wide=False):
     """
     Predict values from a Fasta file
     """
+    ind_cols = ["gene", "position", "wt"]
+    if not wide:
+        ind_cols.append("mut")
+
     if tsv is not None:
-        tsv = tsv[["gene", "position", "wt", "mut"]]
+        tsv = tsv[ind_cols]
 
     for seq in SeqIO.parse(fasta, format="fasta", alphabet=Alphabet.IUPAC.IUPACProtein()):
         try:
@@ -56,19 +60,25 @@ def predict_fasta(model, fasta, layers, tsv=None):
         df = df[df.index < len(seq.seq)] # Remove padded records
         df['gene'] = seq.id
         df['wt'] = seq.seq
-        df = df.melt(id_vars=["gene", "position", "wt"], var_name="mut", value_name="pred")
+
+        if not wide:
+            df = df.melt(id_vars=["gene", "position", "wt"], var_name="mut", value_name="pred")
 
         if tsv is not None:
-            df = df.merge(tsv, on=["gene", "position", "wt", "mut"], how="inner")
+            df = df.merge(tsv, on=ind_cols, how="inner")
 
-        df = df.sort_values(by=["gene", "position", "wt", "mut"])
+        df = df.sort_values(by=ind_cols)
 
-        yield df[["gene", "position", "wt", "mut", "pred"]]
+        yield df[ind_cols + ["pred"]]
 
-def predict_proteinnet(model, data, func):
+def predict_proteinnet(model, data, func, wide=False):
     """
     Predict values from a ProteinNetDataset
     """
+    ind_cols = ["pdb_id", "chain", "position", "wt"]
+    if not wide:
+        ind_cols.append("mut")
+
     for record in data:
         # Format model input
         try:
@@ -88,12 +98,14 @@ def predict_proteinnet(model, data, func):
         df['pdb_id'] = record.pdb_id if record.pdb_id is not None else record.id
         df['chain'] = record.pdb_chain
         df['wt'] = record.primary
-        df = df.melt(id_vars=["pdb_id", "chain", "position", "wt"],
-                     var_name="mut", value_name="pred")
 
-        df = df.sort_values(by=["pdb_id", "chain", "position", "wt", "mut"])
+        if not wide:
+            df = df.melt(id_vars=ind_cols,
+                        var_name="mut", value_name="pred")
 
-        yield df[["pdb_id", "chain", "position", "wt", "mut", "pred"]]
+        df = df.sort_values(by=ind_cols)
+
+        yield df[ind_cols + ["pred"]]
 
 def predict_clinvar(model, clinvar, proteinnet, layers, contact, pssm):
     """
@@ -155,11 +167,11 @@ def main(args):
         filter_func = make_id_filter(list(tsv.pdb_id), list(tsv.chain)) if tsv is not None else None
         data = ProteinNetDataset(path=args.proteinnet, preload=False, filter_func=filter_func)
         func = SequenceUNETMapFunction(num_layers=args.layers if args.layers else None,
-                                       contact_graph=args.contacts, pssm=args.pssm)
+                                       contact_graph=args.contacts, pssm=args.pssm, wide=args.wide)
         preds = predict_proteinnet(model, data, func)
 
     elif args.fasta:
-        preds = predict_fasta(model, fasta=args.fasta, layers=args.layers, tsv=tsv)
+        preds = predict_fasta(model, fasta=args.fasta, layers=args.layers, tsv=tsv, wide=args.wide)
 
     else:
         raise ValueError("One of --fasta or --proteinnet must be passed")
@@ -186,6 +198,8 @@ def parse_args():
     options.add_argument('--pssm', "-s", help="Use PSSM input", action="store_true")
     options.add_argument('--layers', "-l", help="Number of layers in bottom UNET model",
                         type=int, default=6)
+
+    options.add_argument('--wide', "-w", help="Output a wide table", action="store_true")
 
     args = parser.parse_args()
 
