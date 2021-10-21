@@ -13,14 +13,14 @@ def main(args):
     Main
     """
     with open(args.ids, mode="r") as id_file:
-        ids = set(i for i in id_file)
+        ids = set(i.strip() for i in id_file)
 
     _open = partial(gzip.open, mode="rt") if args.gzip else open
     with _open(args.fasta) as fasta_file:
-        for record in SeqIO.read(fasta_file, "fasta"):
+        for record in SeqIO.parse(fasta_file, "fasta"):
             ident = record.id.split("|")[1] if args.uniprot else record.id
             if ident in ids:
-                print(record.format("fasta"), file=sys.stdout)
+                print(record.format("fasta"), file=sys.stdout, end="")
 
 def parse_args():
     """
