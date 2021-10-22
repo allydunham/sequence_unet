@@ -69,7 +69,7 @@ def predict_fasta(model, fasta, layers, tsv=None, wide=False):
 
         df = df.sort_values(by=ind_cols)
 
-        yield df[ind_cols + ["pred"]]
+        yield df[ind_cols + (list(AMINO_ACIDS) if wide else ["pred"])]
 
 def predict_proteinnet(model, data, func, wide=False):
     """
@@ -101,11 +101,11 @@ def predict_proteinnet(model, data, func, wide=False):
 
         if not wide:
             df = df.melt(id_vars=ind_cols,
-                        var_name="mut", value_name="pred")
+                         var_name="mut", value_name="pred")
 
         df = df.sort_values(by=ind_cols)
 
-        yield df[ind_cols + ["pred"]]
+        yield df[ind_cols + (list(AMINO_ACIDS) if wide else ["pred"])]
 
 def predict_clinvar(model, clinvar, proteinnet, layers, contact, pssm):
     """
