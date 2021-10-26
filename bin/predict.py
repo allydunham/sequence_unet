@@ -43,7 +43,7 @@ def predict_fasta(model, fasta, layers, tsv=None, wide=False):
         try:
             one_hot = one_hot_sequence(seq)
         except KeyError as err:
-            print(f"Unknown amino acid in {seq.id} - {err}")
+            print(f"Unknown amino acid in {seq.id} - {err}", file=sys.stderr)
             continue
 
         # Pad to be divisable
