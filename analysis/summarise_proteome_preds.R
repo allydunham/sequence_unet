@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
-# Summarise Uniprot
-source("src/config.R")
+# Summarise wide Sequence UNET prediction files
+library(tidyverse)
 
 input_files <- commandArgs(TRUE)
 
