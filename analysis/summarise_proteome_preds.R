@@ -17,11 +17,11 @@ process_gene <- function(x, ...) {
   mat <- long[, .(pair = paste0(wt, "_", mut), mean = mean(pred)), keyby = .(wt, mut)][,.(pair, mean)]
   mat <- merge(mat, exp_mat, all = TRUE)   
   
-  out <- cbind(data.table(length = nrow(x),
+  cbind(data.table(length = nrow(x),
                    mean_pred = mean(long$pred),
                    mean_wt = mean(long$pred[long$mut == long$wt]),
                    mean_mut = mean(long$pred[!long$mut == long$wt])),
-         dcast(mat, formula = . ~ pair, value.var = "mean"))
+         dcast(mat, formula = . ~ pair, value.var = "mean", drop = FALSE)[,-1])
 }
 
 process_file <- function(x, print_col_names=FALSE) {
