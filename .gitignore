@@ -7,4 +7,9 @@ models/**
 !models/**/
 !models/**/*.py
 
+# Python package
+build/*
+proteinnetpy.egg-info/*
+
+# R project
 .Rproj.user

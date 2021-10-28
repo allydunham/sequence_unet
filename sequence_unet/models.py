@@ -1,0 +1,141 @@
+"""
+Sequence UNET neural network model. Including functions to initialise fresh models
+and trained models of different kinds.
+"""
+from tensorflow.keras import layers, models
+from sequence_unet.graph_cnn import GraphCNN
+from sequence_unet.metrics import CUSTOM_OBJECTS
+
+def download_trained_model(model, model_dir):
+	"""
+	Download a trained Sequence UNET model from BioModels
+	"""
+	pass
+
+def load_trained_model(model, model_dir):
+	"""
+	Load a trained Sequence UNET model
+	"""
+	pass
+
+def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
+                   graph_layers=None, graph_activation="relu",
+                   conv_activation="relu", pred_activation="sigmoid",
+                   kernel_regulariser=None, batch_normalisation=False):
+    """
+    Keras model predicting multiple alignment frequency matrix from sequences, based on
+    a 1D UNET architecture.
+
+    Expected input: (B, N, 20) arrays with B batches of Nx20 matrices, representing
+                    sequences with one hot encoding on each row. An additional (B, N, N)
+                    array with NxN contact graphs is required when graph_layers is not none.
+                    The UNET architecture means N must be divisble by 2^(num_layers - 1).
+                    This can be achieved with padding and masking.
+    Output:         (B, N, 20) arrays of B batches of Nx20 arrays, with
+                    the predicted features of each AA at each position as rows.
+    """
+    num_layers = num_layers - 1 # 0 index layers
+
+    input_seq = layers.Input(shape=[None, 20], name='input_seq')
+    inputs = input_seq
+    x = input_seq
+
+    if graph_layers is not None:
+        input_graph = layers.Input(shape=[None, None], name='input_graph')
+        inputs = [input_seq, input_graph]
+        for i, units in enumerate(graph_layers):
+            x = GraphCNN(units, activation=graph_activation, name=f'graph_{i}')([input_graph, x])
+
+        x = layers.concatenate([input_seq, x], name="graph_concat")
+
+    # Contraction
+    contraction = []
+    for i in range(num_layers):
+        x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
+                          activation=conv_activation, name=f'down_{i}_conv_1',
+                          kernel_regularizer=kernel_regulariser)(x)
+        x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
+                          activation=conv_activation, name=f'down_{i}_conv_2',
+                          kernel_regularizer=kernel_regulariser)(x)
+        contraction.append(x)
+        x = layers.MaxPool1D(pool_size=2, strides=2, padding='same', name=f'down_{i}_max_pool')(x)
+
+        if batch_normalisation:
+            x = layers.BatchNormalization(name=f"down_{i}_batch_normalisation")(x)
+
+        if dropout:
+            x = layers.SpatialDropout1D(dropout, name=f'down_{i}_dropout')(x)
+
+    # Bottom layer
+    x = layers.Conv1D(filters * 2 ** num_layers, kernel_size, 1,
+                      padding='same', activation=conv_activation, name=f'bottom_conv_1',
+                      kernel_regularizer=kernel_regulariser)(x)
+    x = layers.Conv1D(filters * 2 ** num_layers, kernel_size, 1,
+                      padding='same', activation=conv_activation, name=f'bottom_conv_2',
+                      kernel_regularizer=kernel_regulariser)(x)
+
+    if batch_normalisation:
+            x = layers.BatchNormalization(name="bottom_batch_normalisation")(x)
+
+    if dropout:
+        x = layers.SpatialDropout1D(dropout, name='bottom_dropout')(x)
+
+    # Expansion
+    for i in range(num_layers - 1, -1, -1):
+        x = layers.UpSampling1D(2, name=f'up_{i}_upsample')(x)
+        x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
+                          activation=conv_activation, name=f'up_{i}_conv_1',
+                          kernel_regularizer=kernel_regulariser)(x)
+        x = layers.concatenate([contraction[i], x], name=f"up_{i}_concat")
+
+        x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
+                          activation=conv_activation, name=f'up_{i}_conv_2',
+                          kernel_regularizer=kernel_regulariser)(x)
+        x = layers.Conv1D(filters * 2 ** i, kernel_size, 1, padding='same',
+                          activation=conv_activation, name=f'up_{i}_conv_3',
+                          kernel_regularizer=kernel_regulariser)(x)
+
+        if batch_normalisation:
+            x = layers.BatchNormalization(name=f"up_{i}_batch_normalisation")(x)
+
+        if dropout:
+            x = layers.SpatialDropout1D(dropout, name=f'up_{i}_dropout')(x)
+
+    preds = layers.Conv1D(20, 1, 1, activation=pred_activation, name="predictor",
+                          kernel_regularizer=kernel_regulariser)(x)
+
+    return models.Model(inputs=inputs, outputs=preds)
+
+def top_model(bottom_model=None, features=False, tune_layers=3, kernel_size=3,
+              activation="sigmoid", kernel_regulariser=None,
+              activity_regulariser=None, dropout=0):
+    """
+    Model predicting variant deleteriousness. Trained on top of a PSSM prediction model.
+    Predicts a single probability for each variant.
+
+    bottom_model: PSSM model to train on top of. Bottom_model=None creates a simple CNN model.
+    features: Start from model features rather than predicted output.
+    tune_layers: Number of top layers to set as trainable.
+    """
+    if bottom_model is not None:
+        bottom_model = models.load_model(bottom_model, custom_objects=CUSTOM_OBJECTS)
+
+        bottom_model.trainable = True
+
+        for layer in bottom_model.layers[:-tune_layers]:
+            layer.trainable = False
+
+        x = bottom_model.layers[-2 if features else -1].output
+    else:
+        input_features = layers.Input(shape=[None, 20], name='input')
+        x = input_features
+
+    if dropout:
+        x = layers.SpatialDropout1D(dropout, name="top_dropout")(x)
+
+    preds = layers.Conv1D(20, kernel_size, 1, padding='same', activation=activation, name='preds',
+                          kernel_regularizer=kernel_regulariser,
+                          activity_regularizer=activity_regulariser)(x)
+
+    return models.Model(inputs=bottom_model.inputs if bottom_model is not None else input_features,
+                        outputs=preds)
