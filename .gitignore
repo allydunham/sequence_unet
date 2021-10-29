@@ -9,7 +9,7 @@ models/**
 
 # Python package
 build/*
-proteinnetpy.egg-info/*
+sequence_unet.egg-info/*
 
 # R project
 .Rproj.user

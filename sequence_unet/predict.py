@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
-from Bio import Alphabet
 
 from sequence_unet.graph_cnn import contact_graph
 from proteinnetpy.data import LabeledFunction
@@ -78,7 +77,6 @@ class SequenceUNETMapFunction(LabeledFunction):
         else:
             return out, labels
 
-
 def predict_fasta(model, fasta, layers, variants=None, wide=False):
     """
     Predict values from a Fasta file
@@ -90,7 +88,7 @@ def predict_fasta(model, fasta, layers, variants=None, wide=False):
     if variants is not None:
         variants = variants[ind_cols]
 
-    for seq in SeqIO.parse(fasta, format="fasta", alphabet=Alphabet.IUPAC.IUPACProtein()):
+    for seq in SeqIO.parse(fasta, format="fasta"):
         try:
             one_hot = one_hot_sequence(seq)
         except KeyError as err:
@@ -130,7 +128,7 @@ def predict_proteinnet(model, data, layers=6, contacts=False, wide=False):
     if not wide:
         ind_cols.append("mut")
 
-	func = SequenceUNETMapFunction(num_layers=layers if layers else 1, contact_graph=contacts)
+    func = SequenceUNETMapFunction(num_layers=layers if layers else 1, contact_graph=contacts)
 
     for record in data:
         try:

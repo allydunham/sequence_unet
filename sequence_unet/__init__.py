@@ -7,8 +7,8 @@ __version__ = "1.0.0"
 import logging
 
 from sequence_unet import metrics
-from sequence_unet import prediction
+from sequence_unet import predict
 from sequence_unet import graph_cnn
 from sequence_unet import models
 
-__all__ = [metrics.__all__, prediction.__all__, graph_cnn.__all__, models.__all__]
+__all__ = [metrics.__all__, predict.__all__, graph_cnn.__all__, models.__all__]

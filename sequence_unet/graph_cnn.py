@@ -2,7 +2,9 @@
 Graph CNN layer
 """
 import numpy as np
-from tensorflow.keras import layers, models, activations, backend as K
+from tensorflow.keras import layers, activations, backend as K
+
+__all__ = ['contact_graph', 'GraphCNN']
 
 def contact_graph(record, binary=False, contact_distance=1000):
     """
