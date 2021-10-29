@@ -4,7 +4,11 @@ It also provides tools for training finetuned models for related tasks and initi
 """
 __version__ = "1.0.0"
 
+import logging
+
 from sequence_unet import metrics
-from sequence_unet import proteinnet_maps
+from sequence_unet import prediction
 from sequence_unet import graph_cnn
 from sequence_unet import models
+
+__all__ = [metrics.__all__, prediction.__all__, graph_cnn.__all__, models.__all__]

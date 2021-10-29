@@ -5,6 +5,8 @@ Module containing custom metrics and losses
 import tensorflow as tf
 from tensorflow.keras import losses, metrics, backend as K
 
+__all__ = ["masked_binary_crossentropy", "masked_accuracy", "WeightedMaskedBinaryCrossEntropy"]
+
 def masked_binary_crossentropy(y_true, y_pred):
     """
     Binary cross entropy where any classes marked 0 are masked and then
@@ -62,9 +64,3 @@ class WeightedMaskedBinaryCrossEntropy(losses.Loss):
                        "neg_weight": self.neg_weight,
                        "from_logits": self.from_logits})
         return config
-
-CUSTOM_OBJECTS = {
-    "masked_binary_crossentropy": masked_binary_crossentropy,
-    "masked_accuracy": masked_accuracy,
-    "WeightedMaskedBinaryCrossEntropy": WeightedMaskedBinaryCrossEntropy
-}

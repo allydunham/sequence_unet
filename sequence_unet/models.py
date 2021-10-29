@@ -2,26 +2,81 @@
 Sequence UNET neural network model. Including functions to initialise fresh models
 and trained models of different kinds.
 """
+import requests
+import os
 from tensorflow.keras import layers, models
-from sequence_unet.graph_cnn import GraphCNN
-from sequence_unet.metrics import CUSTOM_OBJECTS
 
-def download_trained_model(model, model_dir):
+from sequence_unet.graph_cnn import GraphCNN
+from sequence_unet import metrics
+
+__all__ = ["sequence_unet", "cnn_top_model", "download_trained_model",
+           "download_all_models", "load_trained_model", "MODELS"]
+
+CUSTOM_OBJECTS = {
+	"masked_binary_crossentropy": metrics.masked_binary_crossentropy,
+    "masked_accuracy": metrics.masked_accuracy,
+    "WeightedMaskedBinaryCrossEntropy": metrics.WeightedMaskedBinaryCrossEntropy,
+	"GraphCNN": GraphCNN
+}
+
+MODELS = {
+	'freq_classifier': '',
+	'pregraph_freq_classifier': '',
+	'pssm_predictor': '',
+	'pregraph_pssm_predictor': '',
+	'patho_top': '',
+	'pregraph_patho_top': '',
+	'patho_finetune': '',
+	'pregraph_patho_finetune': ''
+}
+
+def download_trained_model(model, root="."):
 	"""
 	Download a trained Sequence UNET model from BioModels
 	"""
-	pass
+	if not os.path.isdir(root):
+		raise FileNotFoundError(f"No directory found at {root}")
 
-def load_trained_model(model, model_dir):
+	if model not in MODELS.keys():
+		raise ValueError(f"model not recognised. Must one of: {', '.join(MODELS.keys())}")
+
+	# download
+
+def download_all_models(root="."):
+	"""
+	Download all trained Sequence UNET models from BioModels
+	"""
+	if not os.path.isdir(root):
+		raise FileNotFoundError(f"No directory found at {root}")
+
+	for model in MODELS.keys():
+		download_trained_model(model, root)
+
+def load_trained_model(model, root=".", download=False):
 	"""
 	Load a trained Sequence UNET model
 	"""
-	pass
+	if os.path.isfile(model):
+		path = model
+
+	elif model in MODELS.keys():
+		path = f"{root}/{model}.tf"
+		if not os.path.isfile(path):
+			if download:
+				download_trained_model(model, root)
+			else:
+				raise FileNotFoundError("No model found at {path}")
+
+	else:
+		raise ValueError(("Unrecognised model - must be a path to a SavedModel or one of the "
+		                  "options in sequence_unet.models.MODELS"))
+
+	return models.load_model(path, custom_objects=CUSTOM_OBJECTS)
 
 def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
-                   graph_layers=None, graph_activation="relu",
-                   conv_activation="relu", pred_activation="sigmoid",
-                   kernel_regulariser=None, batch_normalisation=False):
+                  graph_layers=None, graph_activation="relu",
+                  conv_activation="relu", pred_activation="sigmoid",
+                  kernel_regulariser=None, batch_normalisation=False):
     """
     Keras model predicting multiple alignment frequency matrix from sequences, based on
     a 1D UNET architecture.
@@ -106,12 +161,12 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
 
     return models.Model(inputs=inputs, outputs=preds)
 
-def top_model(bottom_model=None, features=False, tune_layers=3, kernel_size=3,
-              activation="sigmoid", kernel_regulariser=None,
-              activity_regulariser=None, dropout=0):
+def cnn_top_model(bottom_model=None, features=False, output_size=20,
+                  tune_layers=3, kernel_size=3,
+                  activation="sigmoid", kernel_regulariser=None,
+                  activity_regulariser=None, dropout=0):
     """
-    Model predicting variant deleteriousness. Trained on top of a PSSM prediction model.
-    Predicts a single probability for each variant.
+    Add a 1D CNN layer top model to a trained Tensorflow Keras model
 
     bottom_model: PSSM model to train on top of. Bottom_model=None creates a simple CNN model.
     features: Start from model features rather than predicted output.
@@ -125,6 +180,7 @@ def top_model(bottom_model=None, features=False, tune_layers=3, kernel_size=3,
         for layer in bottom_model.layers[:-tune_layers]:
             layer.trainable = False
 
+        input_features = bottom_model.inputs
         x = bottom_model.layers[-2 if features else -1].output
     else:
         input_features = layers.Input(shape=[None, 20], name='input')
@@ -133,9 +189,9 @@ def top_model(bottom_model=None, features=False, tune_layers=3, kernel_size=3,
     if dropout:
         x = layers.SpatialDropout1D(dropout, name="top_dropout")(x)
 
-    preds = layers.Conv1D(20, kernel_size, 1, padding='same', activation=activation, name='preds',
+    preds = layers.Conv1D(output_size, kernel_size, 1, padding='same',
+						  activation=activation, name='preds',
                           kernel_regularizer=kernel_regulariser,
                           activity_regularizer=activity_regulariser)(x)
 
-    return models.Model(inputs=bottom_model.inputs if bottom_model is not None else input_features,
-                        outputs=preds)
+    return models.Model(inputs=input_features, outputs=preds)

@@ -11,7 +11,7 @@ setup(name='sequence_unet',
       install_requires=['numpy', 'pandas' 'biopython', 'tensorflow>=2.0', 'proteinnetpy>=0.5.1'],
       extras_require={},
       entry_points = {
-        'console_scripts': ['sequence_unet=sequence_unet.scripts.predict:main',
+        'console_scripts': ['sequence_unet=sequence_unet.scripts.seq_unet:main',
                             'split_fasta=sequence_unet.scripts.split_fasta:main',
                             'filter_fasta=sequence_unet.scripts.filter_fasta:main']
       },
