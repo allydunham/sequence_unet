@@ -12,7 +12,7 @@ from proteinnetpy.data import make_length_filter
 
 import metrics
 import pn_maps
-from sequence_unet import sequence_unet
+from seq_unet import sequence_unet
 
 def load_data(validation=False):
     """

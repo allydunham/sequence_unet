@@ -11,7 +11,7 @@ from proteinnetpy.data import ProteinNetDataset, ProteinNetMap
 from proteinnetpy.data import make_length_filter
 
 import pn_maps
-from sequence_unet import sequence_unet
+from seq_unet import sequence_unet
 
 def make_load_data(structure=False):
     """
