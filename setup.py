@@ -7,11 +7,11 @@ setup(name='sequence_unet',
       author='Alistair Dunham',
       author_email='alistair.dunham@ebi.ac.uk',
       license='Apache 2.0',
-      packages=find_packages(),
+      packages=['sequence_unet'],
       install_requires=['numpy', 'pandas' 'biopython', 'tensorflow>=2.0', 'proteinnetpy>=0.5.1'],
       extras_require={},
       entry_points = {
-        'console_scripts': ['sequence_unet=sequence_unet.scripts.seq_unet:main',
+        'console_scripts': ['sequence_unet=sequence_unet.scripts.make_preds:main',
                             'split_fasta=sequence_unet.scripts.split_fasta:main',
                             'filter_fasta=sequence_unet.scripts.filter_fasta:main']
       },
