@@ -7,7 +7,7 @@ library(purrr)
 amino_acids <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
 
 parser <- arg_parser("Summarise wide Sequence UNET prediction files")
-parser <- add_argument(parser, "files", help="Files to summarise", type="character")
+parser <- add_argument(parser, "--files", help="Files to summarise", nargs = Inf, type="character")
 parser <- add_argument(parser, "--mut_thresh", help="Number of deleterious variants required for a position to be conserved", default=9)
 parser <- add_argument(parser, "--del_thresh", help="Deleteriousness threshold", default=0.5)
 args <- parse_args(parser)
