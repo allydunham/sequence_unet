@@ -3,6 +3,9 @@
 source("src/config.R")
 
 # Import combined data
+col_types <- cols(tool = col_character(), organism = col_character(), protein = col_character(),
+                  length = col_integer(), .default = col_double())
+omics <- read_tsv("data/abundance/muller_proteomics_processed.tsv", col_types = col_types)
 
 ### Analysis ###
 plots <- list()
