@@ -15,4 +15,4 @@ overall_summary <- pos_summary[, .(mean_sift = mean(mean_score),
                                    percent_avg_conserved = sum(mean_score < 0.05) / .N,
                                    mean_conserved = mean(n_conserved),
                                    percent_n_conserved = sum(n_conserved > 9) / .N), by = .(organism, acc)]
-fwrite(overall_summary, "data/abundance/mutfunc_sift_summary.tsv", quote = FALSE, sep = "\t", col.names = print_col_names)
+fwrite(overall_summary, "data/abundance/mutfunc_sift_summary.tsv", quote = FALSE, sep = "\t")
