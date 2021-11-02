@@ -6,7 +6,7 @@ library(data.table)
 sift <- rbind(
   `Homo sapiens`=fread("/nfs/research1/beltrao/ally/mutations/data/mutfunc/human/conservation/sift_parsed_all.tab", sep="\t"),
   `Saccharomyces cerevisiae`=fread("/nfs/research1/beltrao/ally/mutations/data/mutfunc/yeast/conservation/sift_parsed_all.tab", sep="\t", skip=1),
-  `Escherichia coli`=fread("/nfs/research1/beltrao/ally/mutations/data/mutfunc/ecoli/conservation/sift.tab", sep="\t")[,.(acc = protein)],
+  `Escherichia coli`=rename(fread("/nfs/research1/beltrao/ally/mutations/data/mutfunc/ecoli/conservation/sift.tab", sep="\t"), acc = protein),
   .idcol = "organism"
 )
 
