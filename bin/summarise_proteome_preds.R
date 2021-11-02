@@ -37,4 +37,4 @@ process_file <- function(x, print_col_names=FALSE) {
   fwrite(s, quote = FALSE, sep = "\t", col.names = print_col_names)
 }
 
-walk(args$files, ~process_file(., print_col_names = . == input_files[1]))
+walk(args$files, ~process_file(., print_col_names = . == args$files[1]))
