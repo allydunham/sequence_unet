@@ -24,8 +24,9 @@ abundance <- read_csv("data/abundance/muller_proteomics.csv", col_names = c("row
   select(-row)
 
 fasta <- Biostrings::readAAStringSet("data/abundance/muller.fa")
-protein_lengths <- tibble(protein = str_match(names(fasta), "[a-z]{2}\\|([A-Z0-9]*)\\|.*")[,2],
-                          length = Biostrings::width(fasta))
+protein_lengths <- tibble(protein = names(fasta), length = Biostrings::width(fasta)) %>%
+  extract(protein, into = c("source", "protein"), regex = "([a-z]{2})\\|([0-9A-Z]*)\\|.*") %>%
+  mutate(source = c(tr="TrEMBL", sp="SwissProt")[source])
 
 protein_groups <- str_split(abundance$proteins, ";")
 group_counts <- map_int(protein_groups, length)
@@ -51,5 +52,7 @@ comb <- bind_rows(
   `UNET PSSM` = left_join(processed_abundance, pssm, by = c("protein" = "gene")) %>% drop_na(mean_mut),
   `UNET Top` = left_join(processed_abundance, top_model, by = c("protein" = "gene")) %>% drop_na(mean_mut),
   .id = "tool"
-)
+) %>%
+  select(organism, source, protein, tool, length, everything()) %>%
+  arrange(organism, protein, tool)
 write_tsv(comb, "data/abundance/muller_proteomics_processed.tsv")
