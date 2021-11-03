@@ -77,6 +77,7 @@ class SequenceUNETMapFunction(LabeledFunction):
         else:
             return out, labels
 
+# TODO - split this into predict seq and fasta parsing?
 def predict_fasta(model, fasta, layers, variants=None, wide=False):
     """
     Predict values from a Fasta file

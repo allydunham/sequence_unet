@@ -1,6 +1,5 @@
 """
-Sequence UNET neural network model. Including functions to initialise fresh models
-and trained models of different kinds.
+Load, download and initialise trained and untrained Sequence UNET models.
 """
 import requests
 import os
@@ -9,8 +8,10 @@ from tensorflow.keras import layers, models
 from sequence_unet.graph_cnn import GraphCNN
 from sequence_unet import metrics
 
+# TODO function to convert freq matrix to PSSM values?
+
 __all__ = ["sequence_unet", "cnn_top_model", "download_trained_model",
-           "download_all_models", "load_trained_model", "MODELS"]
+           "download_all_models", "load_trained_model", "MODELS", "CUSTOM_OBJECTS"]
 
 CUSTOM_OBJECTS = {
 	"masked_binary_crossentropy": metrics.masked_binary_crossentropy,
@@ -18,6 +19,10 @@ CUSTOM_OBJECTS = {
     "WeightedMaskedBinaryCrossEntropy": metrics.WeightedMaskedBinaryCrossEntropy,
 	"GraphCNN": GraphCNN
 }
+"""
+Dictionary containing the object mappings required to load Sequence UNET
+Keras models using `tf.keras.models.load_model`.
+"""
 
 MODELS = {
 	'freq_classifier': '',
@@ -29,10 +34,35 @@ MODELS = {
 	'patho_finetune': '',
 	'pregraph_patho_finetune': ''
 }
+"""
+Dictionary mapping the IDs and download locations of each trained Sequence UNET model.
+"""
 
 def download_trained_model(model, root="."):
 	"""
-	Download a trained Sequence UNET model from BioModels
+	Download a trained Sequence UNET model.
+
+	Download the specified trained Sequence UNET model from BioStudies.
+	Models are specified using the IDs indicated in models.MODELS, which also maps them to BioStudies files.
+	Each model comes in a sequence only version (X) and version accepting additional structural input (pregraph_X).
+
+	# Available models:
+
+	* `freq_classifier`: Classifier predicting where variants occur above or below 0.01 observation frequency in a cross species multiple sequence alignment, as a proxy for deleteriousness.
+	* `pssm_predictor`: Model predicting multiple alignment frequencies, which can be converted into a PSSM.
+	* `patho_top`: Classifier predicting variant pathogenicity, trained as a new classifier head for `freq_classifier` on ClinVar data.
+	* `patho_finetune`: Classifier predicting variant pathogenicity, trained by finetuning `freq_classifier` on ClinVar data.
+	* `pregraph_freq_classifier`: Equivalent to `freq_classifier` taking structural input.
+	* `pregraph_pssm_predictor`: Equivalent to `pssm_predictor` taking structural input.
+	* `pregraph_patho_top`: Equivalent to `patho_top` taking structural input.
+	* `pregraph_patho_finetune`: Equivalent to `patho_finetune` taking structural input.
+
+	Parameters
+	----------
+	model : str
+	        Sequence UNET model to download (see options in description and models.MODELS).
+	root  : str
+	        Root directory to download to.
 	"""
 	if not os.path.isdir(root):
 		raise FileNotFoundError(f"No directory found at {root}")
@@ -44,24 +74,26 @@ def download_trained_model(model, root="."):
 
 def download_all_models(root="."):
 	"""
-	Download all trained Sequence UNET models from BioModels
+	Download all trained Sequence UNET models.
+
+	Download all trained Sequence UNET models from BioStudies.
 	"""
 	if not os.path.isdir(root):
 		raise FileNotFoundError(f"No directory found at {root}")
 
 	for model in MODELS.keys():
-		download_trained_model(model, root)
+		download_trained_model(model, root=root, format=)
 
 def load_trained_model(model, root=".", download=False):
 	"""
 	Load a trained Sequence UNET model
 	"""
-	if os.path.isfile(model):
+	if os.path.exists(model):
 		path = model
 
 	elif model in MODELS.keys():
 		path = f"{root}/{model}.tf"
-		if not os.path.isfile(path):
+		if not os.path.exists(path):
 			if download:
 				download_trained_model(model, root)
 			else:
