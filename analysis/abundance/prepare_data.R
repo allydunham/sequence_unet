@@ -21,12 +21,15 @@ top_model <- read_tsv("data/abundance/muller_top_summary.tsv") %>%
 
 ### Abundance Intensity ###
 abundance <- read_csv("data/abundance/muller_proteomics.csv", col_names = c("row", "proteins", "intensity", "organism"), skip = 1) %>%
-  select(-row)
-
+  select(-row) %>%
+  mutate(organism = ifelse(organism == "Dentriovibrio acetiphilus", "Denitrovibrio acetiphilus", organism))
+  
 fasta <- Biostrings::readAAStringSet("data/abundance/muller.fa")
 protein_lengths <- tibble(protein = names(fasta), length = Biostrings::width(fasta)) %>%
   extract(protein, into = c("source", "protein"), regex = "([a-z]{2})\\|([0-9A-Z]*)\\|.*") %>%
   mutate(source = c(tr="TrEMBL", sp="SwissProt")[source])
+
+species <- readxl::read_xlsx("data/abundance/muller_species.xlsx", sheet = 2)
 
 protein_groups <- str_split(abundance$proteins, ";")
 group_counts <- map_int(protein_groups, length)
@@ -34,16 +37,24 @@ processed_abundance <- tibble(organism = rep(abundance$organism, times = group_c
                               protein = unlist(protein_groups),
                               intensity = rep(abundance$intensity, times = group_counts)) %>%
   left_join(protein_lengths, by = "protein") %>%
+  left_join(species, by = c("organism" = "species")) %>%
   group_by(organism) %>%
   mutate(intensity_per_len = intensity / length,
          intensity_fc = log2((intensity + 1) / median(intensity)),
          intensity_fc_per_len = log2((intensity_per_len + 1) / median(intensity_per_len, na.rm = TRUE))) %>%
-  ungroup()
+  ungroup() %>%
+  select(superkingdom, organism, taxid, source, protein, length, everything())
 
 ### SIFT ###
+# Set E. coli SIFT4G uniprot IDs to ED1a equivalents strain rather than K12 since this is the strain with abundances
+ed1a_k12 <- read_tsv("data/abundance/ed1a_to_k12.tsv")
+
 sift <- read_tsv("data/abundance/mutfunc_sift_summary.tsv") %>%
   rename(protein = acc, mean_mut = mean_sift) %>%
-  select(-organism)
+  select(-organism) %>%
+  left_join(select(ed1a_k12, ed1a, k12), by = c("protein"="k12")) %>%
+  mutate(protein = ifelse(is.na(ed1a), protein, ed1a)) %>%
+  select(-ed1a)
 
 ### Combine ###
 comb <- bind_rows(
@@ -53,6 +64,6 @@ comb <- bind_rows(
   `UNET Top` = left_join(processed_abundance, top_model, by = c("protein" = "gene")) %>% drop_na(mean_mut),
   .id = "tool"
 ) %>%
-  select(organism, source, protein, tool, length, everything()) %>%
-  arrange(organism, protein, tool)
+  select(superkingdom, organism, taxid, source, protein, length, tool, everything()) %>%
+  arrange(superkingdom, organism, protein, tool)
 write_tsv(comb, "data/abundance/muller_proteomics_processed.tsv")
