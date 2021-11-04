@@ -28,7 +28,7 @@ process_gene <- function(x, ...) {
              mean_wt = mean(long$pred[long$mut == long$wt]),
              mean_mut = mean(long$pred[!long$mut == long$wt]),
              percent_avg_conserved = sum(mut_del(pos_summary$mean_pred)) / nrow(x),
-             mean_conserved = mean(n_conserved),
+             mean_conserved = mean(pos_summary$n_conserved),
              percent_n_conserved = sum(pos_summary$n_conserved > args$mut_thresh) / nrow(x))
 }
 
