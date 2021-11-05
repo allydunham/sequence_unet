@@ -82,7 +82,7 @@ def download_all_models(root="."):
 		raise FileNotFoundError(f"No directory found at {root}")
 
 	for model in MODELS.keys():
-		download_trained_model(model, root=root, format=)
+		download_trained_model(model, root=root)
 
 def load_trained_model(model, root=".", download=False):
 	"""
