@@ -16,7 +16,8 @@ col_types <- cols(.default = col_double(), superkingdom = col_character(), organ
                   source = col_character(), protein = col_character(), length = col_integer(), tool = col_character())
 omics <- read_tsv("data/abundance/muller_proteomics_processed.tsv", col_types = col_types) %>%
   mutate(organism = factor(organism, levels = species_order),
-         taxid = factor(taxid, levels = taxid_order))
+         taxid = factor(taxid, levels = taxid_order),
+         superkingdom = factor(superkingdom, levels = c("Eukaryote", "Archea", "Bacteria")))
 
 ### Analysis ###
 plots <- list()
@@ -26,6 +27,12 @@ plots$length_intensity <- (ggplot(distinct(omics, protein, length, intensity), a
   geom_smooth(aes(group = 1), method = 'lm', formula = y ~ x) +
   labs(x = "Length", y = "Intensity")) %>%
   labeled_plot(file_format = "png")
+
+plots$kingdom_length <- ggplot(distinct(omics, superkingdom, organism, protein, length), aes(x = superkingdom, y = length, fill = superkingdom)) +
+  geom_boxplot(outlier.shape = 20, outlier.size = 0.5, show.legend = FALSE) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
+  labs(x = "", y = "Length")
 
 get_cor <- function(x, ...) {
   if (nrow(x) < 3) {
@@ -93,5 +100,33 @@ plots$correlations <- ggplot(omics_summary, aes(x = organism, y = estimate, ymin
         legend.position = "bottom")
 plots$correlations <- labeled_plot(plots$correlations, unit = "cm", height = 10, width = 20)
 
+plots$conservation <- ggplot(omics, aes(x = organism, y = mean_conserved, fill = superkingdom)) +
+  facet_wrap(~tool, ncol = 1) +
+  geom_boxplot(outlier.shape = 20, outlier.size = 0.5) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  labs(x = "", y = "Mean Deleterious Variants") +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+plots$conservation <- labeled_plot(plots$conservation, unit = "cm", height = 20, width = 10)
+
+plots$kingdom_conservation <- ggplot(omics_summary, aes(x = superkingdom, fill = superkingdom, y = mean_percent_conserved)) +
+  geom_boxplot(show.legend = FALSE, outlier.shape = 20, outlier.size = 0.5) +
+  stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
+  labs(x = "", y = "Mean % Conserved")
+
+plots$kingdom_mean_length <- ggplot(omics_summary, aes(x = superkingdom, y = mean_length, fill = superkingdom)) +
+  geom_boxplot(outlier.shape = 20, outlier.size = 0.5, show.legend = FALSE) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
+  labs(x = "", y = "Length")
+
+plots$kingdom_mean_mut <- ggplot(omics, aes(x = superkingdom, y = mean_mut, fill = superkingdom)) +
+  facet_wrap(~tool, nrow = 2, scales = "free_y") +
+  geom_boxplot(outlier.shape = 20, outlier.size = 0.5, show.legend = FALSE) +
+  scale_fill_brewer(name = "", palette = "Dark2") +
+  stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
+  labs(x = "", y = "Mean predicted score")
+plots$kingdom_mean_mut <- labeled_plot(plots$kingdom_mean_mut, file_format = "png")
+  
 ### Save plots ###
 save_plotlist(plots, "figures/abundance", overwrite = "all")
