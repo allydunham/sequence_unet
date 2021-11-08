@@ -19,13 +19,43 @@ omics <- read_tsv("data/abundance/muller_proteomics_processed.tsv", col_types = 
          taxid = factor(taxid, levels = taxid_order),
          superkingdom = factor(superkingdom, levels = c("Eukaryote", "Archea", "Bacteria")))
 
+comp_time <- bind_rows(
+  read_tsv("data/abundance/times_other_tools.tsv"),
+  read_tsv("data/abundance/times_cpu.tsv") %>%
+    extract(id, "gene", "[a-z]*\\|([A-Z0-9]*)\\|.*") %>%
+    mutate(tool = "UNET (CPU)", variants = length * 19),
+  read_tsv("data/abundance/times_gpu.tsv") %>%
+    extract(id, "gene", "[a-z]*\\|([A-Z0-9]*)\\|.*") %>%
+    mutate(tool = "UNET (GPU)", variants = length * 19)
+)
+
 ### Analysis ###
 plots <- list()
 
-plots$length_intensity <- (ggplot(distinct(omics, protein, length, intensity), aes(x = cut_number(length, 10), y = intensity)) +
-  geom_boxplot() +
-  geom_smooth(aes(group = 1), method = 'lm', formula = y ~ x) +
-  labs(x = "Length", y = "Intensity")) %>%
+# Tool efficiency
+common_time_axis <- dup_axis(name = "", breaks = c(0.01, 1, 60, 60*60, 60*60*24),
+                             labels = c("1 Millisecond", "1 Second", "1 Minute", "1 Hour", "1 Day"))
+
+plots$comp_time <- ggplot(comp_time, aes(x = variants, y = time, colour = tool, size = tool, alpha = tool)) +
+  geom_point(shape = 20) +
+  scale_y_log10(labels = c("0.01", "0.1", "1", "10", "100", "10,000", "1,000,000"), breaks = c(0.01, 0.1, 1, 10, 100, 10000, 1000000),
+                limits = c(0.01, 1000000), sec.axis = common_time_axis) +
+  scale_x_log10(labels = scales::label_comma()) +
+  scale_colour_brewer(name = "", palette = "Dark2") +
+  scale_size_manual(values = c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.1, `UNET (CPU)` = 0.1)) +
+  scale_alpha_manual(values = c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.5, `UNET (CPU)` = 0.5)) +
+  guides(alpha = "none", size = "none") +
+  labs(x = "Variants Computed", y = "Computation Time (s)") +
+  theme(axis.ticks.y.right = element_blank())
+plots$comp_time <- labeled_plot(plots$comp_time, file_format = "png", unit = "cm", height = 10, width = 10)
+
+# Omics
+plots$length_intensity <- distinct(omics, superkingdom, protein, length, intensity_fc) %>%
+  {ggplot(., aes(x = length, y = intensity_fc, colour = superkingdom)) +
+      facet_wrap(~superkingdom, scales = "free_x", ncol = 1) +
+      geom_point(show.legend = FALSE, shape = 20, size = 0.2, alpha = 0.5) +
+      geom_smooth(method = 'lm', formula = y ~ x, colour = "black") +
+      labs(x = "Length", y = expression("log"[2]~"Intensity FC"))} %>%
   labeled_plot(file_format = "png")
 
 plots$kingdom_length <- ggplot(distinct(omics, superkingdom, organism, protein, length), aes(x = superkingdom, y = length, fill = superkingdom)) +
@@ -34,6 +64,7 @@ plots$kingdom_length <- ggplot(distinct(omics, superkingdom, organism, protein, 
   stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
   labs(x = "", y = "Length")
 
+# Abundance vs preds
 get_cor <- function(x, ...) {
   if (nrow(x) < 3) {
     return(tibble(estimate=NA, statistic=NA, p.value=NA, parameter=NA, method=NA, alternative=NA))
@@ -74,12 +105,28 @@ plots$metric_cor_summary_reduced <- (filter(cor_summary, organism %in% c("Homo s
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))) %>%
   labeled_plot(unit = "cm", height = 10, width = 10)
 
-# TODO compare TrEMBL vs SwissProt
-omics_summary <- select(omics, superkingdom, organism, taxid, source, protein, tool, length, intensity_fc_per_len,
+# Protein Source
+source_summary <- select(omics, superkingdom, organism, source, tool, intensity_fc_per_len, mean_conserved) %>%
+  filter(tool %in% c("SIFT4G", "UNET PSSM")) %>%
+  drop_na() %>%
+  group_by(superkingdom, source, organism, tool) %>%
+  filter(n() > 2) %>%
+  summarise(tidy(cor.test(intensity_fc_per_len, mean_conserved)), .groups = "drop")
+
+plots$protein_source <- ggplot(source_summary, aes(x = source, y = estimate, fill = source)) +
+  facet_wrap(~superkingdom, nrow = 1) +
+  geom_boxplot(show.legend = FALSE) +
+  stat_compare_means(method = "t.test", comparisons = list(c("SwissProt", "TrEMBL"))) +
+  labs(x = "", y = expression("Pearson's"~rho)) +
+  lims(y = c(-0.4, 1))
+
+# Reduced 
+omics_summary <- select(omics, superkingdom, organism, taxid, source, protein, tool, length, intensity, intensity_fc_per_len,
                         mean_conserved, percent_n_conserved, mean_mut) %>%
   filter(tool %in% c("SIFT4G", "UNET PSSM")) %>%
   group_by(superkingdom, organism, taxid, tool) %>%
   summarise(tidy(cor.test(intensity_fc_per_len, mean_conserved)),
+            mean_intensity = mean(intensity),
             mean_length = mean(length),
             mean_mut = mean(mean_mut),
             mean_percent_conserved = mean(percent_n_conserved),
@@ -127,6 +174,20 @@ plots$kingdom_mean_mut <- ggplot(omics, aes(x = superkingdom, y = mean_mut, fill
   stat_compare_means(method = "t.test", comparisons = list(c("Eukaryote", "Archea"), c("Archea", "Bacteria"), c("Eukaryote", "Bacteria"))) +
   labs(x = "", y = "Mean predicted score")
 plots$kingdom_mean_mut <- labeled_plot(plots$kingdom_mean_mut, file_format = "png")
-  
+
+plots$correlation_vs_length <- ggplot(filter(omics_summary, tool == "UNET PSSM"), aes(x = estimate, y = mean_length, colour = superkingdom)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  scale_colour_brewer(name = "", palette = "Dark2") +
+  labs(x = expression("Pearson's"~rho), y = "Mean Protein Length")
+
+plots$correlation_vs_abundance <- ggplot(filter(omics_summary, tool == "UNET PSSM"),
+                                         aes(x = estimate, y = mean_intensity, colour = superkingdom)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  scale_y_log10() +
+  scale_colour_brewer(name = "", palette = "Dark2") +
+  labs(x = expression("Pearson's"~rho), y = "Mean Abundance")
+
 ### Save plots ###
 save_plotlist(plots, "figures/abundance", overwrite = "all")
