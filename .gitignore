@@ -11,5 +11,8 @@ models/**
 build/*
 sequence_unet.egg-info/*
 
+# Documentation
+docs/build
+
 # R project
 .Rproj.user
