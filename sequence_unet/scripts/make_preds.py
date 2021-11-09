@@ -18,9 +18,10 @@ ProteinNet: Use --proteinnet path/to/protiennet and optionally --tsv path/to/tsv
 import argparse
 import sys
 import pandas as pd
+from Bio import SeqIO
 
 from sequence_unet.models import load_trained_model
-from sequence_unet.predict import predict_proteinnet, predict_fasta
+from sequence_unet.predict import predict_proteinnet, predict_sequence
 from proteinnetpy.data import ProteinNetDataset, make_id_filter
 
 def main():
@@ -36,10 +37,13 @@ def main():
         filter_func = make_id_filter(list(tsv.pdb_id), list(tsv.chain)) if tsv is not None else None
         data = ProteinNetDataset(path=args.proteinnet, preload=False, filter_func=filter_func)
         preds = predict_proteinnet(model, data, layers=args.layers,
-								   contact=args.contacs, wide=args.wide)
+								   contact=args.contacs, wide=args.wide,
+                                   make_pssm=args.pssm)
 
     elif args.fasta:
-        preds = predict_fasta(model, fasta=args.fasta, layers=args.layers, tsv=tsv, wide=args.wide)
+        fasta = SeqIO.parse(args.fasta, format="fasta")
+        preds = predict_sequence(model, sequences=fasta, layers=args.layers, tsv=tsv,
+                                 wide=args.wide, make_pssm=args.pssm)
 
     else:
         raise ValueError("One of --fasta or --proteinnet must be passed")
@@ -65,6 +69,8 @@ def parse_args():
                          type=int, default=6)
 
     options.add_argument('--wide', "-w", help="Output a wide table", action="store_true")
+    options.add_argument('--pssm', "-p", help="Convert output frequency predictions to PSSMs",
+	                     action="store_true")
 
     options.add_argument('--model_dir', "-m", help="Directory to locate/download model files to")
     options.add_argument('--download', "-d", action="store_true",

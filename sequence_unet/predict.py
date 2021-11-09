@@ -4,16 +4,21 @@ Predict values using SequenceUNET models
 import logging
 import numpy as np
 import pandas as pd
-from Bio import SeqIO
 
 from sequence_unet.graph_cnn import contact_graph
 from proteinnetpy.data import LabeledFunction
 
-__all__ = ["SequenceUNETMapFunction", "predict_fasta", "predict_proteinnet"]
+__all__ = ["SequenceUNETMapFunction", "predict_sequence", "predict_proteinnet",
+           "one_hot_sequence", "padding_rows"]
 
 AMINO_ACIDS = np.array(['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N',
                         'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y'])
 AA_HASH = {aa: index for index, aa in enumerate(AMINO_ACIDS)}
+
+# from ExPASy Data Portal (https://web.expasy.org/docs/relnotes/relstat.html, 17/08/2020)
+# Values are for AAs alphabetically
+AA_FREQS = np.array([8.25, 1.38, 5.46, 6.72, 3.86, 7.08, 2.27, 5.91, 5.80, 9.65,
+                     2.41, 4.05, 4.73, 3.93, 5.53, 6.63, 5.35, 6.86, 1.09, 2.92]) / 100
 
 def one_hot_sequence(seq):
     """
@@ -23,6 +28,18 @@ def one_hot_sequence(seq):
     one_hot = np.zeros((len(indeces), 20), dtype=np.int)
     one_hot[np.arange(len(indeces)), indeces] = 1
     return one_hot
+
+def padding_rows(length, layers):
+	"""
+	Calculate the number of 0 padding rows required for Sequence UNET input.
+	"""
+	return 2 ** (layers - 1) - length % 2 ** (layers - 1) if layers > 0 else 0
+
+def freqs_to_pssm(mat):
+    """
+    Convert a frequency matrix to a PSSM
+    """
+    return np.log2((mat + 0.00001) / AA_FREQS[:,None]).astype(np.int)
 
 class SequenceUNETMapFunction(LabeledFunction):
     """
@@ -59,7 +76,7 @@ class SequenceUNETMapFunction(LabeledFunction):
             labels = labels.astype(int) + 1
 
         # Need to make sure output can be halved a sufficient number of time
-        pad_rows = 2 ** (self.num_layers - 1) - data.shape[0] % 2 ** (self.num_layers - 1)
+        pad_rows = padding_rows(data.shape[0], self.num_layers)
         if pad_rows:
             data = np.pad(data, ((0, pad_rows), (0, 0)), mode='constant')
             labels = np.pad(labels, ((0, pad_rows), (0, 0)), mode='constant')
@@ -77,10 +94,9 @@ class SequenceUNETMapFunction(LabeledFunction):
         else:
             return out, labels
 
-# TODO - split this into predict seq and fasta parsing?
-def predict_fasta(model, fasta, layers, variants=None, wide=False):
+def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make_pssm=False):
     """
-    Predict values from a Fasta file
+    Predict values from a iterable of sequence strings
     """
     ind_cols = ["gene", "position", "wt"]
     if not wide:
@@ -89,7 +105,7 @@ def predict_fasta(model, fasta, layers, variants=None, wide=False):
     if variants is not None:
         variants = variants[ind_cols]
 
-    for seq in SeqIO.parse(fasta, format="fasta"):
+    for seq in sequences:
         try:
             one_hot = one_hot_sequence(seq)
         except KeyError as err:
@@ -97,12 +113,15 @@ def predict_fasta(model, fasta, layers, variants=None, wide=False):
             continue
 
         # Pad to be divisable
-        pad_rows = 2 ** (layers - 1) - one_hot.shape[0] % 2 ** (layers - 1) if layers > 0 else 0
+        pad_rows = padding_rows(one_hot.shape[0], layers)
         if pad_rows:
             one_hot = np.pad(one_hot, ((0, pad_rows), (0, 0)), mode='constant')
             preds = model(np.array([one_hot])).numpy()[0, :-pad_rows, :]
         else:
             preds = model(np.array([one_hot])).numpy()[0, :, :]
+
+        if make_pssm:
+            preds = freqs_to_pssm(preds)
 
         df = pd.DataFrame(preds, columns=AMINO_ACIDS).reset_index()
         df = df.rename(columns={'index': 'position'})
@@ -121,7 +140,7 @@ def predict_fasta(model, fasta, layers, variants=None, wide=False):
 
         yield df[ind_cols + (list(AMINO_ACIDS) if wide else ["pred"])]
 
-def predict_proteinnet(model, data, layers=6, contacts=False, wide=False):
+def predict_proteinnet(model, data, layers=6, contacts=False, wide=False, make_pssm=False):
     """
     Generator yielding predictions from
     """
@@ -141,6 +160,9 @@ def predict_proteinnet(model, data, layers=6, contacts=False, wide=False):
         # Predict
         x = [np.array([i]) for i in mod_input[0]]
         preds = model(x).numpy()[0, :, :]
+
+        if make_pssm:
+            preds = freqs_to_pssm(preds)
 
         df = pd.DataFrame(preds, columns=AMINO_ACIDS).reset_index()
         df = df.rename(columns={'index': 'position'})
