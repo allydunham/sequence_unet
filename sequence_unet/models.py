@@ -155,7 +155,7 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
 	Parameters
 	----------
 	filters              : int
-		Number of convolutional filters on the top layers. Lower layers have $Filters * 2^N$ filters, so large numbers of filters in deep networks quickly scales to very many weights.
+		Number of convolutional filters on the top layers. Lower layers have F x 2^N filters, so large numbers of filters in deep networks quickly scales to very many weights.
 	kernel_size          : int
 		Width of 1D convolutional kernals.
 	num_layers           : int

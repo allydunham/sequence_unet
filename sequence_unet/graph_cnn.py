@@ -1,5 +1,5 @@
 """
-Graph CNN layer
+Simple GraphCNN TensorFlow Keras layer and supporting functions.
 """
 import numpy as np
 from tensorflow.keras import layers, activations, backend as K
@@ -8,7 +8,23 @@ __all__ = ['contact_graph', 'GraphCNN']
 
 def contact_graph(record, binary=False, contact_distance=1000):
     """
-    Calculate a contact graph from a ProteinNetPy Record
+    Calculate a residue contact graph from a `proteinnetpy.record.ProteinNetRecord`.
+
+    Calculate a contact matrix for the amino acids in a ProteinNet Record. This defines the edges of a weighted graph showing which residues connect to each other. The graph is determined from the proteins distance matrix, filtering to only include cells below the specified contact distance cutoff. Additional self connections and any missing connections to the neighbouring two residues in the primary sequence are added. Then each row is normalised to weight connections by innverse distance.
+
+    Parameters
+	----------
+	record            : `proteinnetpy.record.ProteinNetRecord`
+        ProteinNet Record to calculate the contact graph for.
+	binary            : bool
+		Use binary contacts instead of similarity scaled.
+	contact_distance : numeric
+		Maximum distance in nanometers between two residue for them to be considered in contact.
+
+	Returns
+	-------
+	numpy.array
+    	A contact graph matrix, where each cell represents the similarity scaled contact between a pair of amino acids.
     """
     distance_matrix = record.distance_matrix()
 
@@ -50,7 +66,31 @@ def contact_graph(record, binary=False, contact_distance=1000):
     return contacts
 
 class GraphCNN(layers.Layer):
-    """Graph CNN Layer"""
+    """
+    Graph CNN Keras Layer
+
+    A simnple GraphCNN Keras layer, which takes a feature matrix and edge matrix to calculate new features for each node of the graph. The matrix multiplication makes this opperation able to be performed on any sized input graph.
+
+    Expected input: (B, N, F) feature arrays with B batches of N x F matrices, representing
+                    the F features for each of the N nodes in the graph.
+                    (B, N, N) edge weight matrix giving the weighting for each edge in the graph.
+
+    Output:         (B, N, F) array of B batches of new N x F feature arrays.
+
+    Parameters
+	----------
+	record            : `proteinnetpy.record.ProteinNetRecord`
+        ProteinNet Record to calculate the contact graph for.
+	binary            : bool
+		Use binary contacts instead of similarity scaled.
+	contact_distance : numeric
+		Maximum distance in nanometers between two residue for them to be considered in contact.
+
+	Returns
+	-------
+	numpy.array
+    	A contact graph matrix, where each cell represents the similarity scaled contact between a pair of amino acids.
+    """
     def __init__(self, units=32, activation='relu', **kwargs):
         super().__init__(**kwargs)
         self.units = units

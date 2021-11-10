@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module containing custom metrics and losses
+Custom weighted metrics and losses for training and evaluating Sequence UNET models.
 """
 import tensorflow as tf
 from tensorflow.keras import losses, metrics, backend as K
@@ -9,9 +9,21 @@ __all__ = ["masked_binary_crossentropy", "masked_accuracy", "WeightedMaskedBinar
 
 def masked_binary_crossentropy(y_true, y_pred):
     """
-    Binary cross entropy where any classes marked 0 are masked and then
-    true labels are offset by minus 1 (i.e a label of 1 corresponds to index 0 in y_pred).
-    Accepts predictions/true values as matrices.
+    Zero masked binary cross-entropy.
+
+    A version of the binary cross-entropy loss function with masked labels. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Accepts predictions/true values as matrices.
+
+    Parameters
+	----------
+	y_true            : float
+        True class labels. 0 < x < 1.
+	y_pred            : int
+		Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
+
+	Returns
+	-------
+	float
+    	Binary cross-entropy from non-masked positions
     """
     y_true = K.flatten(y_true)
     y_pred = K.flatten(y_pred)
@@ -24,8 +36,21 @@ def masked_binary_crossentropy(y_true, y_pred):
 
 def masked_accuracy(y_true, y_pred):
     """
-    Accuracy metric where classes marked 0 are masked and then true labels are offset by
-    minus 1 (i.e a label of 1 corresponds to index 0 in y_pred).
+    Zero masked binary accuracy.
+
+    A version of the binary accuracy metric with masked labels. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Accepts predictions/true values as matrices.
+
+    Parameters
+	----------
+	y_true            : float
+        True class labels. 0 < x < 1.
+	y_pred            : int
+		Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
+
+	Returns
+	-------
+	float
+    	Binary accuracy from non-masked positions
     """
     mask = tf.not_equal(y_true, 0)
     y_true_masked = tf.boolean_mask(y_true - 1, mask)
@@ -34,20 +59,57 @@ def masked_accuracy(y_true, y_pred):
 
 class WeightedMaskedBinaryCrossEntropy(losses.Loss):
     """
-    Binary cross entropy where any classes marked 0 are masked and then
-    true labels are offset by minus 1 (i.e a label of 1 corresponds to index 0 in y_pred).
-    Output is weighted by the given class weights.
-    Accepts predictions/true values as matrices.
+    Version of `masked_binary_crossentropy` with class weights.
+
+    A version of the binary cross-entropy loss function with masked labels and class weights. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Class weightings are applied after masking.Accepts predictions/true values as matrices.
+
+    Methods
+    -------
+    call(y_true, y_pred)
+        Represent the photo in the given colorspace.
+    get_config(self)
+        Change the photo's gamma exposure.
     """
     def __init__(self, pos_weight, neg_weight, from_logits=False,
                  reduction=losses.Reduction.AUTO,
                  name='weighted_masked_binary_crossentropy'):
+        """
+        Initialise a `WeightedMaskedBinaryCrossEntropy` loss
+
+        Parameters
+        ----------
+        pos_weight   : float
+            Weight for positive class (labelled 2 in y_true).
+        neg_weight   : float
+            Weight for negative class (labelled 1 in y_true).
+        from_logits  : bool
+            Treat y_pred as logits rather than probabilities.
+        reduction    : Keras loss reduction strategy
+            Unused, included for keras compatibility.
+        name         : str
+            Metric name.
+        """
         super().__init__(reduction=reduction, name=name)
         self.pos_weight = pos_weight
         self.neg_weight = neg_weight
         self.from_logits = from_logits
 
     def call(self, y_true, y_pred):
+        """
+        Calculate Weighted masked binary cross-entropy.
+
+        Parameters
+        ----------
+        y_true            : float
+            True class labels. 0 < x < 1.
+        y_pred            : int
+            Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
+
+        Returns
+        -------
+        float
+    	    Binary cross-entropy from non-masked positions
+        """
         y_true = K.flatten(y_true)
         y_pred = K.flatten(y_pred)
         mask = tf.not_equal(y_true, 0)
@@ -59,6 +121,16 @@ class WeightedMaskedBinaryCrossEntropy(losses.Loss):
         return ce * weights
 
     def get_config(self):
+        """
+        Generate configuration dictionary for serialisation.
+
+        Generate configuration dictionary used by the Keras save_model function for serialisation.
+
+        Returns
+        -------
+        dict
+    	    Configuration dictionary.
+        """
         config = super().get_config()
         config.update({"pos_weight": self.pos_weight,
                        "neg_weight": self.neg_weight,
