@@ -127,7 +127,9 @@ omics_summary <- select(omics, superkingdom, organism, taxid, source, protein, t
   group_by(superkingdom, organism, taxid, tool) %>%
   summarise(tidy(cor.test(intensity_fc_per_len, mean_conserved)),
             mean_intensity = mean(intensity),
+            sd_intensity = sd(intensity),
             mean_length = mean(length),
+            sd_length = sd(length),
             mean_mut = mean(mean_mut),
             mean_percent_conserved = mean(percent_n_conserved),
             .groups = "drop")
@@ -189,5 +191,21 @@ plots$correlation_vs_abundance <- ggplot(filter(omics_summary, tool == "UNET PSS
   scale_colour_brewer(name = "", palette = "Dark2") +
   labs(x = expression("Pearson's"~rho), y = "Mean Abundance")
 
+plots$correlation_vs_length_sd <- ggplot(filter(omics_summary, tool == "UNET PSSM"), aes(x = estimate, y = sd_length)) +
+  geom_point(aes(colour = superkingdom)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom)) +
+  geom_smooth(method = "lm", formula = y ~ x, colour = "black", size = 1) +
+  scale_colour_brewer(name = "", palette = "Dark2") +
+  labs(x = expression("Pearson's"~rho), y = "Protein Length SD")
+
+plots$correlation_vs_abundance_sd <- ggplot(filter(omics_summary, tool == "UNET PSSM"),
+                                         aes(x = estimate, y = sd_intensity)) +
+  geom_point(aes(colour = superkingdom)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom)) +
+  geom_smooth(method = "lm", formula = y ~ x, colour = "black", size = 1) +
+  scale_y_log10() +
+  scale_colour_brewer(name = "", palette = "Dark2") +
+  labs(x = expression("Pearson's"~rho), y = "Abundance SD")
+
 ### Save plots ###
-save_plotlist(plots, "figures/abundance", overwrite = "all")
+save_plotlist(plots, "figures/abundance")
