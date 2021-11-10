@@ -8,6 +8,9 @@ import gzip
 from functools import partial
 from Bio import SeqIO
 
+AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N',
+               'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+
 def main(args):
     """
     Main
@@ -19,6 +22,10 @@ def main(args):
     with _open(args.fasta) as fasta_file:
         for record in SeqIO.parse(fasta_file, "fasta"):
             ident = record.id.split("|")[1] if args.uniprot else record.id
+
+            if args.iupac and not all(i in AMINO_ACIDS for i in record):
+                continue
+
             if ident in ids:
                 print(record.format("fasta"), file=sys.stdout, end="")
 
@@ -35,6 +42,8 @@ def parse_args():
     parser.add_argument('--gzip', '-g', action="store_true", help="Fasta file is gzipped")
     parser.add_argument('--uniprot', '-u', action="store_true",
                         help="Fasta file is Uniprot formatted and ID list contains Uniprot IDs")
+    parser.add_argument('--iupac', '-i', action="store_true",
+                        help="Filter to only include cannonical amino acids")
 
     return parser.parse_args()
 
