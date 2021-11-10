@@ -35,13 +35,13 @@ def one_hot_sequence(seq):
     Convert a Biopython AA sequnece to one hot representation.
 
     Parameters
-	----------
-	seq : BioPython Sequence
+    ----------
+    seq : BioPython Sequence
         Sequence to convert to one-hot matrix
-	Returns
-	-------
-	`numpy.array`
-    	One-hot encoded sequence array
+    Returns
+    -------
+    `numpy.array`
+        One-hot encoded sequence array
     """
     indeces = np.array([AA_HASH[aa] for aa in seq])
     one_hot = np.zeros((len(indeces), 20), dtype=np.int)
@@ -49,24 +49,24 @@ def one_hot_sequence(seq):
     return one_hot
 
 def padding_rows(length, layers=6):
-	"""
-	Calculate the number of padding rows for an input sequence matrix.
+    """
+    Calculate the number of padding rows for an input sequence matrix.
 
     Calculate the number of padding rows required by Sequence UNET for an input sequence matrix. This number of 0 rows should be added to the end of the array so it can be evenly halved a sufficient number of times.
 
     Parameters
-	----------
-	length : int
+    ----------
+    length : int
         Sequence length
     layers : int
         Number of layers in the Sequence UNET model. All pre-trained models have 6 layers.
 
-	Returns
-	-------
-	int
-    	Number of padding rows required.
-	"""
-	return 2 ** (layers - 1) - length % 2 ** (layers - 1) if layers > 0 else 0
+    Returns
+    -------
+    int
+        Number of padding rows required.
+    """
+    return 2 ** (layers - 1) - length % 2 ** (layers - 1) if layers > 0 else 0
 
 def freqs_to_pssm(mat):
     """
@@ -79,14 +79,14 @@ def freqs_to_pssm(mat):
     The baseline amino acid frequencies can be found in `AA_FREQS` and were collected from ExPASY Data Portal (https://web.expasy.org/docs/relnotes/relstat.html) on 17/08/2020.
 
     Parameters
-	----------
-	mat : Numpy array
+    ----------
+    mat : Numpy array
         N x 20 array of MSA frequencies (floats in the range 0 to 1). This can optionally have an additional batch dimension to transform multiple PSSMs at once.
 
-	Returns
-	-------
-	Numpy array
-    	(B x) N x 20 PSSM matrix.
+    Returns
+    -------
+    Numpy array
+        (B x) N x 20 PSSM matrix.
     """
     return np.log2((mat + 0.00001) / AA_FREQS[:,None]).astype(np.int)
 
@@ -94,9 +94,24 @@ class SequenceUNETMapFunction(LabeledFunction):
     """
     ProteinNetPy LabeledFunction returning the required data for the sequence UNET model.
 
-    LabeledFunction taking a ProteinNetPy record and returning the data required to run Sequence UNET on that record. This can be used with a ProteinNetPy map to generate input data for training or predictions.
+    LabeledFunction taking a ProteinNetPy record and returning the data required to run Sequence UNET on that record. This can be used with a ProteinNetPy map to generate input data for training or predictions. The function outputs a tuple containing model input, N x 20 labels matrix and optionally N long position weights vector . Model input is itself a tuple contaning the N x 20 one-hot encoded sequence and optionally the protein's amino acid contact graph.
 
-    The function outputs a tuple containing model input, N x 20 labels matrix and optionally N long position weights vector . Model input is itself a tuple contaning the N x 20 one-hot encoded sequence and optionally the protein's amino acid contact graph.
+    Attributes
+    ----------
+    num_layers    : int
+        Expected number of layers in the target Sequence UNET model.
+    threshold     : float or None
+        If set, the function returns categorical output, with variants below this threshold classed as deleterious.
+    contact_graph : bool
+        The function outputs a contact graph in addition to the one-hot encoded sequence in the model input tuple (the first element of the returned tuple).
+    weights       : bool
+        The function outputs per position sample weights as the third element of the output tuple, with true positions weighted 1 and padded positions weighted 0.
+    freq_input    : bool
+        The function outputs true PSSM frequencies instead of one-hot encoded sequences.
+    output_shapes : tuple
+        Potentially nested tuple describing the shape of the arrays output by the function.
+    output_types  : tuple
+        Potentially nested tuple describing the type of the arrays output by the function.
     """
     def __init__(self, num_layers=4, threshold=None, contact_graph=False,
                  weights=False, freq_input=False):
@@ -104,7 +119,7 @@ class SequenceUNETMapFunction(LabeledFunction):
         Initialise the SequenceUNETMapFunction.
 
         Parameters
-	    ----------
+        ----------
         num_layers     : int
             Number of layers in the Sequence UNET model.
         threshold      : float or None
@@ -142,12 +157,12 @@ class SequenceUNETMapFunction(LabeledFunction):
         Generate Sequence UNET input data from a ProteinNet record. The function outputs a tuple containing model input, N x 20 labels matrix and optionally N long position weights vector . Model input is itself a tuple contaning the N x 20 one-hot encoded sequence and optionally the protein's amino acid contact graph.
 
         Parameters
-	    ----------
+        ----------
         record : ProteinNetPy ProteinNetRecord
             ProteinNet record to process.
 
         Returns
-	    -------
+        -------
         tuple
             Model input, labels and optionally weights to be passed to Sequence UNET. See above for details.
         """

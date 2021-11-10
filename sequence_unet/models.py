@@ -12,10 +12,10 @@ __all__ = ["sequence_unet", "cnn_top_model", "download_trained_model",
            "download_all_models", "load_trained_model", "MODELS", "CUSTOM_OBJECTS"]
 
 CUSTOM_OBJECTS = {
-	"masked_binary_crossentropy": metrics.masked_binary_crossentropy,
+    "masked_binary_crossentropy": metrics.masked_binary_crossentropy,
     "masked_accuracy": metrics.masked_accuracy,
     "WeightedMaskedBinaryCrossEntropy": metrics.WeightedMaskedBinaryCrossEntropy,
-	"GraphCNN": GraphCNN
+    "GraphCNN": GraphCNN
 }
 """
 Dictionary containing the object mappings required to load Sequence UNET
@@ -23,123 +23,123 @@ Keras models using `tf.keras.models.load_model`.
 """
 
 MODELS = {
-	'freq_classifier': '',
-	'pregraph_freq_classifier': '',
-	'pssm_predictor': '',
-	'pregraph_pssm_predictor': '',
-	'patho_top': '',
-	'pregraph_patho_top': '',
-	'patho_finetune': '',
-	'pregraph_patho_finetune': ''
+    'freq_classifier': '',
+    'pregraph_freq_classifier': '',
+    'pssm_predictor': '',
+    'pregraph_pssm_predictor': '',
+    'patho_top': '',
+    'pregraph_patho_top': '',
+    'patho_finetune': '',
+    'pregraph_patho_finetune': ''
 }
 """
 Dictionary mapping the IDs and download locations of each trained Sequence UNET model.
 """
 
 def download_trained_model(model, root="."):
-	"""
-	Download a trained Sequence UNET model.
+    """
+    Download a trained Sequence UNET model.
 
-	Download the specified trained Sequence UNET model from BioStudies.
-	Models are specified using the IDs indicated in models.MODELS, which also maps them to BioStudies files.
-	Each model comes in a sequence only version (X) and version accepting additional structural input (pregraph_X).
+    Download the specified trained Sequence UNET model from BioStudies.
+    Models are specified using the IDs indicated in models.MODELS, which also maps them to BioStudies files.
+    Each model comes in a sequence only version (X) and version accepting additional structural input (pregraph_X).
 
-	# Available models:
+    # Available models:
 
-	* `freq_classifier`: Classifier predicting where variants occur above or below 0.01 observation frequency in a cross species multiple sequence alignment, as a proxy for deleteriousness.
-	* `pssm_predictor`: Model predicting multiple alignment frequencies, which can be converted into a PSSM.
-	* `patho_top`: Classifier predicting variant pathogenicity, trained as a new classifier head for `freq_classifier` on ClinVar data.
-	* `patho_finetune`: Classifier predicting variant pathogenicity, trained by finetuning `freq_classifier` on ClinVar data.
-	* `pregraph_freq_classifier`: Equivalent to `freq_classifier` taking structural input.
-	* `pregraph_pssm_predictor`: Equivalent to `pssm_predictor` taking structural input.
-	* `pregraph_patho_top`: Equivalent to `patho_top` taking structural input.
-	* `pregraph_patho_finetune`: Equivalent to `patho_finetune` taking structural input.
+    * `freq_classifier`: Classifier predicting where variants occur above or below 0.01 observation frequency in a cross species multiple sequence alignment, as a proxy for deleteriousness.
+    * `pssm_predictor`: Model predicting multiple alignment frequencies, which can be converted into a PSSM.
+    * `patho_top`: Classifier predicting variant pathogenicity, trained as a new classifier head for `freq_classifier` on ClinVar data.
+    * `patho_finetune`: Classifier predicting variant pathogenicity, trained by finetuning `freq_classifier` on ClinVar data.
+    * `pregraph_freq_classifier`: Equivalent to `freq_classifier` taking structural input.
+    * `pregraph_pssm_predictor`: Equivalent to `pssm_predictor` taking structural input.
+    * `pregraph_patho_top`: Equivalent to `patho_top` taking structural input.
+    * `pregraph_patho_finetune`: Equivalent to `patho_finetune` taking structural input.
 
-	Parameters
-	----------
-	model : str
-	        Sequence UNET model to download (see options in description and `MODELS`).
-	root  : str
-	        Root directory to download to.
+    Parameters
+    ----------
+    model : str
+            Sequence UNET model to download (see options in description and `MODELS`).
+    root  : str
+            Root directory to download to.
 
-	Returns
-	-------
-	str
-    	Path to downloaded model.
-	"""
-	if not os.path.isdir(root):
-		raise FileNotFoundError(f"No directory found at {root}")
+    Returns
+    -------
+    str
+        Path to downloaded model.
+    """
+    if not os.path.isdir(root):
+        raise FileNotFoundError(f"No directory found at {root}")
 
-	if model not in MODELS.keys():
-		raise ValueError(f"model not recognised. Must one of: {', '.join(MODELS.keys())}")
+    if model not in MODELS.keys():
+        raise ValueError(f"model not recognised. Must one of: {', '.join(MODELS.keys())}")
 
-	# download model
+    # download model
 
 def download_all_models(root="."):
-	"""
-	Download all trained Sequence UNET models.
+    """
+    Download all trained Sequence UNET models.
 
-	Download all trained Sequence UNET models from BioStudies. See `download_trained_model` for a description of the available models.
+    Download all trained Sequence UNET models from BioStudies. See `download_trained_model` for a description of the available models.
 
-	Parameters
-	----------
-	root  : str
-	        Root directory to download to.
+    Parameters
+    ----------
+    root  : str
+            Root directory to download to.
 
-	Returns
-	-------
-	None
-	"""
-	if not os.path.isdir(root):
-		raise FileNotFoundError(f"No directory found at {root}")
+    Returns
+    -------
+    None
+    """
+    if not os.path.isdir(root):
+        raise FileNotFoundError(f"No directory found at {root}")
 
-	for model in MODELS.keys():
-		download_trained_model(model, root=root)
+    for model in MODELS.keys():
+        download_trained_model(model, root=root)
 
 def load_trained_model(model, root=".", download=False):
-	"""
-	Load Sequence UNET models.
+    """
+    Load Sequence UNET models.
 
-	Load a trained Sequence UNET model downloaded with `download_trained_model` or directly from BioStudies. This function provides a convenient wrapper around the Keras load_model function, allowing path or model name input and passing the appropriate custom_objects dictionary.
-	If using load_model directly the `CUSTOM_OBJECTS` dictionary is required so TensorFlow can locate the custom Sequence UNET layers and metrics.
+    Load a trained Sequence UNET model downloaded with `download_trained_model` or directly from BioStudies. This function provides a convenient wrapper around the Keras load_model function, allowing path or model name input and passing the appropriate custom_objects dictionary.
+    If using load_model directly the `CUSTOM_OBJECTS` dictionary is required so TensorFlow can locate the custom Sequence UNET layers and metrics.
 
-	Parameters
-	----------
-	model    : str
-	    Model to load. This can be a direct path or a model name (see `MODELS`), with paths taking precedence. If a name is passed it will be searched for in root.
-	root     : str
-	    Root directory to locate models passed by name. It is ignored if a full path is passed.
-	download : bool
-		Download the requested model if it is not located.
+    Parameters
+    ----------
+    model    : str
+        Model to load. This can be a direct path or a model name (see `MODELS`), with paths taking precedence. If a name is passed it will be searched for in root.
+    root     : str
+        Root directory to locate models passed by name. It is ignored if a full path is passed.
+    download : bool
+        Download the requested model if it is not located.
 
-	Returns
-	-------
-	tf.keras.Model
-    	The trained Sequence UNET model
-	"""
-	if os.path.exists(model):
-		path = model
+    Returns
+    -------
+    tf.keras.Model
+        The trained Sequence UNET model
+    """
+    if os.path.exists(model):
+        path = model
 
-	elif model in MODELS.keys():
-		path = f"{root}/{model}.tf"
-		if not os.path.exists(path):
-			if download:
-				download_trained_model(model, root)
-			else:
-				raise FileNotFoundError("No model found at {path}")
+    elif model in MODELS.keys():
+        path = f"{root}/{model}.tf"
+        if not os.path.exists(path):
+            if download:
+                download_trained_model(model, root)
+            else:
+                raise FileNotFoundError("No model found at {path}")
 
-	else:
-		raise ValueError(("Unrecognised model - must be a path to a SavedModel or one of the "
-		                  "options in sequence_unet.models.MODELS"))
+    else:
+        raise ValueError(("Unrecognised model - must be a path to a SavedModel or one of the "
+                          "options in sequence_unet.models.MODELS"))
 
-	return models.load_model(path, custom_objects=CUSTOM_OBJECTS)
+    return models.load_model(path, custom_objects=CUSTOM_OBJECTS)
 
 def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
                   graph_layers=None, graph_activation="relu",
                   conv_activation="relu", pred_activation="sigmoid",
                   kernel_regulariser=None, batch_normalisation=False):
     """
-	Initialise a Sequence UNET TensorFlow Keras model.
+    Initialise a Sequence UNET TensorFlow Keras model.
 
     Generate a functional style Keras Sequence UNET model.
 
@@ -152,33 +152,33 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
     Output:         (B, N, 20) arrays of B batches of Nx20 arrays, with
                     the predicted features of each AA at each position as rows.
 
-	Parameters
-	----------
-	filters              : int
-		Number of convolutional filters on the top layers. Lower layers have F x 2^N filters, so large numbers of filters in deep networks quickly scales to very many weights.
-	kernel_size          : int
-		Width of 1D convolutional kernals.
-	num_layers           : int
-		Number of down/up sampling layers.
-	dropout              : float
-		Proportion of neurons dropped out between layers.
-	graph_layers         : int or None
-		Number of GraphCNN layers preprocessing structural features to feed into the main network.
-	graph_activation     : str
-		Activation function for GraphCNN layers.
-	conv_activation      : str
-		Activation function for CNN layers.
-	pred_activation      : str
-		Activation function for final layer. Sigmoid was used for frequency classification and softmax for PSSM frequency prediction.
-	kernel_regulariser   : str or None
+    Parameters
+    ----------
+    filters              : int
+        Number of convolutional filters on the top layers. Lower layers have F x 2^N filters, so large numbers of filters in deep networks quickly scales to very many weights.
+    kernel_size          : int
+        Width of 1D convolutional kernals.
+    num_layers           : int
+        Number of down/up sampling layers.
+    dropout              : float
+        Proportion of neurons dropped out between layers.
+    graph_layers         : int or None
+        Number of GraphCNN layers preprocessing structural features to feed into the main network.
+    graph_activation     : str
+        Activation function for GraphCNN layers.
+    conv_activation      : str
+        Activation function for CNN layers.
+    pred_activation      : str
+        Activation function for final layer. Sigmoid was used for frequency classification and softmax for PSSM frequency prediction.
+    kernel_regulariser   : str or None
         Type of kernel regularisation to apply (l1, l2, l1/l2). See Keras Conv1D kernel_regularizer options for details.
-	batch_normalisation  : bool
+    batch_normalisation  : bool
         Apply batch normalisation between contraction and upsampling layers.
 
-	Returns
-	-------
-	tf.keras.Model
-    	The Sequence UNET model
+    Returns
+    -------
+    tf.keras.Model
+        The Sequence UNET model
     """
     num_layers = num_layers - 1 # 0 index layers
 
@@ -267,8 +267,8 @@ def cnn_top_model(bottom_model, features=True, output_size=20,
     tune_layers: Number of top layers to set as trainable.
 
     Parameters
-	----------
-	bottom_model          : tf.keras.Model
+    ----------
+    bottom_model          : tf.keras.Model
         Model to train on top of.
     features              : bool
         Use the final feature layer as input to the top model, replacing the current prediction layer, instead of starting from the current prediction layer.
@@ -287,10 +287,10 @@ def cnn_top_model(bottom_model, features=True, output_size=20,
     dropout               : float
         Dropout to apply before new CNN layer.
 
-	Returns
-	-------
-	tf.keras.Model
-    	The Sequence UNET model
+    Returns
+    -------
+    tf.keras.Model
+        The Sequence UNET model
     """
     bottom_model = models.load_model(bottom_model, custom_objects=CUSTOM_OBJECTS)
 
@@ -307,7 +307,7 @@ def cnn_top_model(bottom_model, features=True, output_size=20,
         x = layers.SpatialDropout1D(dropout, name="top_dropout")(x)
 
     preds = layers.Conv1D(output_size, kernel_size, 1, padding='same',
-						  activation=activation, name='preds',
+                          activation=activation, name='preds',
                           kernel_regularizer=kernel_regulariser,
                           activity_regularizer=activity_regulariser)(x)
 

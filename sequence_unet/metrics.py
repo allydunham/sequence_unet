@@ -14,16 +14,16 @@ def masked_binary_crossentropy(y_true, y_pred):
     A version of the binary cross-entropy loss function with masked labels. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Accepts predictions/true values as matrices.
 
     Parameters
-	----------
-	y_true            : float
+    ----------
+    y_true            : float
         True class labels. 0 < x < 1.
-	y_pred            : int
-		Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
+    y_pred            : int
+        Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
 
-	Returns
-	-------
-	float
-    	Binary cross-entropy from non-masked positions
+    Returns
+    -------
+    float
+        Binary cross-entropy from non-masked positions
     """
     y_true = K.flatten(y_true)
     y_pred = K.flatten(y_pred)
@@ -41,16 +41,16 @@ def masked_accuracy(y_true, y_pred):
     A version of the binary accuracy metric with masked labels. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Accepts predictions/true values as matrices.
 
     Parameters
-	----------
-	y_true            : float
+    ----------
+    y_true            : float
         True class labels. 0 < x < 1.
-	y_pred            : int
-		Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
+    y_pred            : int
+        Predicted class labels. x = 0,1,2 with 0 being masked and 1,2 converted to 0,1.
 
-	Returns
-	-------
-	float
-    	Binary accuracy from non-masked positions
+    Returns
+    -------
+    float
+        Binary accuracy from non-masked positions
     """
     mask = tf.not_equal(y_true, 0)
     y_true_masked = tf.boolean_mask(y_true - 1, mask)
@@ -63,12 +63,14 @@ class WeightedMaskedBinaryCrossEntropy(losses.Loss):
 
     A version of the binary cross-entropy loss function with masked labels and class weights. Classes labelled 0 in y_true are masked, those labelled 1 correspond to 0 in y_pred and those labelled 2 to 1 in y_pred (i.e. offset by -1). Class weightings are applied after masking.Accepts predictions/true values as matrices.
 
-    Methods
-    -------
-    call(y_true, y_pred)
-        Represent the photo in the given colorspace.
-    get_config(self)
-        Change the photo's gamma exposure.
+    Attributes
+    ----------
+    pos_weight  : float
+        Weight applied to positvely labelled (2) items.
+    neg_weight  : float
+        Weight applied to negatively labelled (1) items.
+    from_logits : bool
+        Predictions are assumed to be in logit rather than probability form.
     """
     def __init__(self, pos_weight, neg_weight, from_logits=False,
                  reduction=losses.Reduction.AUTO,
@@ -108,7 +110,7 @@ class WeightedMaskedBinaryCrossEntropy(losses.Loss):
         Returns
         -------
         float
-    	    Binary cross-entropy from non-masked positions
+            Binary cross-entropy from non-masked positions
         """
         y_true = K.flatten(y_true)
         y_pred = K.flatten(y_pred)
@@ -129,7 +131,7 @@ class WeightedMaskedBinaryCrossEntropy(losses.Loss):
         Returns
         -------
         dict
-    	    Configuration dictionary.
+            Configuration dictionary.
         """
         config = super().get_config()
         config.update({"pos_weight": self.pos_weight,
