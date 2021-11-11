@@ -44,16 +44,16 @@ def download_trained_model(model, root="."):
     Models are specified using the IDs indicated in models.MODELS, which also maps them to BioStudies files.
     Each model comes in a sequence only version (X) and version accepting additional structural input (pregraph_X).
 
-    # Available models:
+    Available models:
 
-    * `freq_classifier`: Classifier predicting where variants occur above or below 0.01 observation frequency in a cross species multiple sequence alignment, as a proxy for deleteriousness.
-    * `pssm_predictor`: Model predicting multiple alignment frequencies, which can be converted into a PSSM.
-    * `patho_top`: Classifier predicting variant pathogenicity, trained as a new classifier head for `freq_classifier` on ClinVar data.
-    * `patho_finetune`: Classifier predicting variant pathogenicity, trained by finetuning `freq_classifier` on ClinVar data.
-    * `pregraph_freq_classifier`: Equivalent to `freq_classifier` taking structural input.
-    * `pregraph_pssm_predictor`: Equivalent to `pssm_predictor` taking structural input.
-    * `pregraph_patho_top`: Equivalent to `patho_top` taking structural input.
-    * `pregraph_patho_finetune`: Equivalent to `patho_finetune` taking structural input.
+    :freq_classifier: Classifier predicting where variants occur above or below 0.01 observation frequency in a cross species multiple sequence alignment, as a proxy for deleteriousness.
+    :pssm_predictor: Model predicting multiple alignment frequencies, which can be converted into a PSSM.
+    :patho_top: Classifier predicting variant pathogenicity, trained as a new classifier head for ``freq_classifier`` on ClinVar data.
+    :patho_finetune: Classifier predicting variant pathogenicity, trained by finetuning `freq_classifier` on ClinVar data.
+    :pregraph_freq_classifier: Equivalent to ``freq_classifier`` taking structural input.
+    :pregraph_pssm_predictor: Equivalent to ``pssm_predictor`` taking structural input.
+    :pregraph_patho_top: Equivalent to ``patho_top`` taking structural input.
+    :pregraph_patho_finetune: Equivalent to ``patho_finetune`` taking structural input.
 
     Parameters
     ----------
