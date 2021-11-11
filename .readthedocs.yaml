@@ -23,4 +23,6 @@ formats:
 python:
   install:
     - method: pip
+      path: git+https://github.com/allydunham/proteinnetpy
+    - method: pip
       path: .
