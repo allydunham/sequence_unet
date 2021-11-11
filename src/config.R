@@ -19,6 +19,27 @@ theme_set(theme_pubclean() + theme(legend.position = 'right',
                                    strip.background = element_blank(),
                                    legend.key = element_blank()))
 
+### Constants ###
+TOOL_COLOURS <- c(`PreGraph UNET`="#39f0f5",
+                  UNET="#1f78b4",
+                  `UNET (Finetune)` = "#e31a1c",
+                  `PreGraph UNET (Finetune)` = "#fb9a99", 
+                  `UNET (Top)` = "#6a3d9a",
+                  `PreGraph UNET (Top)` = "#cab2d6"
+                  `Baseline CNN`="#ff7f00",
+                  `Baseline ClinVar` = "#ff7f00",
+                  `Baseline Frequency` = "#fdbf6f"
+                  BLOSUM62="#717171",
+                  SIFT4G="#33a02c",
+                  SPBuild="#f300ff",
+                  `FoldX` = "#b2df8a")
+
+model_colours <- c(`Baseline ClinVar` = "#ff7f00", `Baseline Frequency` = "#fdbf6f",
+                   `SIFT4G` = "#33a02c", BLOSUM62 = "#717171",
+                   `UNET` = "#1f78b4", `PreGraph UNET` = "#39f0f5", 
+                   `UNET (Finetune)` = "#e31a1c", `PreGraph UNET (Finetune)` = "#fb9a99", 
+                   `UNET (Top)` = "#6a3d9a", `PreGraph UNET (Top)` = "#cab2d6")
+
 ### Functions ###
 pretty_p_values <- function(p, breaks = c(0.001, 0.01, 0.05), markdown_exp=FALSE, prefix_p=FALSE){
   breaks <- sort(breaks, decreasing = TRUE)
