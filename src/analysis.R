@@ -17,6 +17,16 @@ step_auc <- function(x, y){
   sum(diff(x) * y[-length(y)])
 }
 
+# Adjust for PR AUC
+pr_auc <- function(recall, precision) {
+  # Drop initial NA with thresh -inf
+  na <- is.na(precision) | is.na(recall)
+  precision <- precision[!na]
+  recall <- recall[!na]
+  # Add additional recall = 0 point
+  step_auc(c(0, recall), c(precision[1], precision))
+}
+
 # Calculate ROC curve
 calc_roc <- function(tbl, true_col, var_col, greater = TRUE, max_steps = 500, max_matrix_size = 100000){
   true_col <- enquo(true_col)
