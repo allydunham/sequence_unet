@@ -4,6 +4,9 @@ proteinnet/*
 # Exclude split proteome predictions
 abundance/split/*
 
+# Exclude Mycoplasma SIFT intermediates
+abundance/mycoplasma_sift/*
+
 # Exclude py scripts in models (and elsewhere) as these are checked into git
 *.py
 
