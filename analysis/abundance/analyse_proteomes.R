@@ -208,4 +208,4 @@ plots$correlation_vs_abundance_sd <- ggplot(filter(omics_summary, tool == "UNET 
   labs(x = expression("Pearson's"~rho), y = "Abundance SD")
 
 ### Save plots ###
-save_plotlist(plots, "figures/abundance")
+save_plotlist(plots, "figures/abundance", overwrite = "all")

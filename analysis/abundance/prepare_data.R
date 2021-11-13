@@ -46,11 +46,39 @@ processed_abundance <- tibble(organism = rep(abundance$organism, times = group_c
   select(superkingdom, organism, taxid, source, protein, length, everything())
 
 ### SIFT ###
+# Import, summarise and cache Mycoplasma results
+# sift_columns <- c("id", "sift_prediction", "sift_score", "median_ic", "n_seq_pos", "n_seq_align")
+# myco_sift <- read_tsv("data/abundance/mycoplasma_sift.tsv", col_names = sift_columns)
+# split_ids <- str_split(myco_sift$id, "[\\.\\:]", simplify = TRUE)
+# myco_sift$protein <- split_ids[,1]
+# myco_sift$position <- str_sub(split_ids[,3], start = 2, end = -2)
+# myco_sift$wt <- str_sub(split_ids[,3], end = 1)
+# myco_sift$mut <- str_sub(split_ids[,3], start = -1)
+# 
+# myco_sift_summary <- select(myco_sift, protein, position, wt, mut, sift_score, median_ic, n_seq_pos) %>%
+#   group_by(protein, position) %>%
+#   summarise(mean_score = mean(sift_score),
+#             n_conserved = sum(sift_score < 0.05),
+#             median_ic = first(median_ic),
+#             n_seq_pos = first(n_seq_pos),
+#             .groups = "drop_last") %>%
+#   summarise(mean_sift = mean(mean_score),
+#             percent_avg_conserved = sum(mean_score < 0.05) / n(),
+#             mean_conserved = mean(n_conserved),
+#             percent_n_conserved = sum(n_conserved > 9) / n(),
+#             mean_median_ic = mean(median_ic),
+#             mean_n_seq = mean(n_seq_pos)) %>%
+#             mutate(organism = "Mycoplasma") %>%
+#             select(organism, everything())
+# write_tsv(myco_sift_summary, "data/abundance/mycoplasma_sift_summary.tsv")
+myco_sift_summary <- read_tsv("data/abundance/mycoplasma_sift_summary.tsv")
+  
 # Set E. coli SIFT4G uniprot IDs to ED1a equivalents strain rather than K12 since this is the strain with abundances
 ed1a_k12 <- read_tsv("data/abundance/ed1a_to_k12.tsv")
-
 sift <- read_tsv("data/abundance/mutfunc_sift_summary.tsv") %>%
-  rename(protein = acc, mean_mut = mean_sift) %>%
+  rename(protein = acc) %>%
+  bind_rows(myco_sift_summary) %>%
+  rename(mean_mut = mean_sift) %>%
   select(-organism) %>%
   left_join(select(ed1a_k12, ed1a, k12), by = c("protein"="k12")) %>%
   mutate(protein = ifelse(is.na(ed1a), protein, ed1a)) %>%
