@@ -2,8 +2,6 @@
 # Produce figure 2 - PSSM prediction performance
 source('src/config.R')
 
-offset_aas <- structure(str_c(c("    ", ""), sort(Biostrings::AA_STANDARD), c("", "    ")), names = sort(Biostrings::AA_STANDARD))
-
 ### Panels - Example output ###
 pssm_preds <- bind_rows(
   true = read_tsv('data/pssm/pn_casp12_validation.tsv') %>%
@@ -26,7 +24,7 @@ p_preds <- select(pssm_preds, -diff) %>%
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
   scale_fill_distiller(name = "Frequency", palette = "PuRd", direction = 1, limits = c(0, 1)) +
   scale_x_continuous(expand = expansion(0), breaks = c(1, 10, 20, 30, 40, 46)) +
-  scale_y_discrete(labels = offset_aas) +
+  scale_y_discrete(guide = guide_axis(n.dodge = 2)) +
   guides(fill = guide_colourbar(barwidth = unit(2, "mm"), title.vjust = 1)) +
   labs(x = "Position", y = "") +
   theme(panel.grid.major.y = element_blank(),
@@ -38,7 +36,7 @@ p_pred_diff <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
   scale_fill_gradient2(name = "Difference", low = "#b2182b", high = "#2166ac") +
   scale_x_continuous(expand = expansion(0), breaks = c(1, 10, 20, 30, 40, 46)) +
-  scale_y_discrete(labels = offset_aas) +
+  scale_y_discrete(guide = guide_axis(n.dodge = 2)) +
   guides(fill = guide_colourbar(barwidth = unit(2, "mm"), title.vjust = 1)) +
   labs(x = "Position", y = "") +
   theme(panel.grid.major.y = element_blank(),

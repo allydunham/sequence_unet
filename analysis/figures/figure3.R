@@ -3,8 +3,6 @@
 source('src/config.R')
 source("src/analysis.R")
 
-offset_aas <- structure(str_c(c("    ", ""), sort(Biostrings::AA_STANDARD), c("", "    ")), names = sort(Biostrings::AA_STANDARD))
-
 ### Panel - Example Output ###
 preds <- bind_rows(
   true = read_tsv('data/pssm/pn_casp12_validation.tsv') %>%
@@ -24,7 +22,7 @@ p_preds <- ggplot(preds, aes(x = position, fill = pred)) +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
   scale_fill_gradient2(name = "P(del)", breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1), midpoint = 0.5, low = "#2166ac", high = "#b2182b") +
   scale_x_continuous(expand = expansion(0), breaks = c(1, seq(10, 90, 10))) +
-  scale_y_discrete(labels = offset_aas) +
+  scale_y_discrete(guide = guide_axis(n.dodge = 2)) +
   guides(fill = guide_colourbar(barwidth = unit(5, "mm"), title.vjust = 1),
          colour = guide_legend(override.aes = list(fill = NA))) +
   labs(x = "Position", y = "") +
