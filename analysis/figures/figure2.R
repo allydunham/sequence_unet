@@ -2,7 +2,9 @@
 # Produce figure 2 - PSSM prediction performance
 source('src/config.R')
 
-### Panel - Example output ###
+offset_aas <- structure(str_c(c("    ", ""), sort(Biostrings::AA_STANDARD), c("", "    ")), names = sort(Biostrings::AA_STANDARD))
+
+### Panels - Example output ###
 pssm_preds <- bind_rows(
   true = read_tsv('data/pssm/pn_casp12_validation.tsv') %>%
     extract(protein, into = c("pdb_id", "chain"), regex = "[0-9]*#([0-9A-Z]*)_[0-9]*_([A-Za-z0-9])") %>%
@@ -15,17 +17,34 @@ pssm_preds <- bind_rows(
   pivot_wider(names_from = 'model', values_from = 'pred') %>%
   mutate(diff = pred - true)
 
-p_preds <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
+p_preds <- select(pssm_preds, -diff) %>%
+  pivot_longer(cols = c(true, pred)) %>%
+  mutate(name = factor(name, levels = c("true", "pred"))) %>%
+  ggplot(aes(x = position, fill = value)) +
+  facet_wrap(~name, ncol = 1, scales = "free_x", labeller = labeller(name = c(true = "True", pred = "Predicted"))) +
   geom_tile(aes(y = mut), colour = "grey") +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
-  scale_fill_gradient2(name = "Pred - True", low = "#b2182b", high = "#2166ac") +
+  scale_fill_distiller(name = "Frequency", palette = "PuRd", direction = 1, limits = c(0, 1)) +
   scale_x_continuous(expand = expansion(0), breaks = c(1, 10, 20, 30, 40, 46)) +
-  guides(fill = guide_colourbar(barwidth = unit(5, "mm"), title.vjust = 1)) +
+  scale_y_discrete(labels = offset_aas) +
+  guides(fill = guide_colourbar(barwidth = unit(2, "mm"), title.vjust = 1)) +
+  labs(x = "Position", y = "") +
+  theme(panel.grid.major.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+
+p_pred_diff <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
+  geom_tile(aes(y = mut), colour = "grey") +
+  geom_tile(aes(y = wt), fill = NA, colour = "black") +
+  scale_fill_gradient2(name = "Difference", low = "#b2182b", high = "#2166ac") +
+  scale_x_continuous(expand = expansion(0), breaks = c(1, 10, 20, 30, 40, 46)) +
+  scale_y_discrete(labels = offset_aas) +
+  guides(fill = guide_colourbar(barwidth = unit(2, "mm"), title.vjust = 1)) +
   labs(x = "Position", y = "") +
   theme(panel.grid.major.y = element_blank(),
         axis.ticks.y = element_blank(),
         legend.position = "right",
-        axis.text.x = element_text(size = 10))
+        axis.text.x = element_text())
 
 ### Panel - Correlation with true values ###
 pssm_models <- read_tsv("data/pssm/combined_preds.tsv") %>%
@@ -38,7 +57,7 @@ p_pssm_cor <- ggplot(pssm_cor, aes(x = model, y = estimate, fill = model, ymin =
   geom_col(width = 0.6, show.legend = FALSE) +
   geom_errorbar(width = 0.5) +
   coord_flip() +
-  scale_fill_manual(name = 'Model', values = tool_colours) +
+  scale_fill_manual(name = 'Model', values = TOOL_COLOURS) +
   labs(y = "Pearson Correlation Coefficient") +
   theme(axis.title.y = element_blank(),
         panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
@@ -65,7 +84,7 @@ pssm_summary <- drop_na(pssm_models) %>%
 p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
   geom_col(position = 'dodge', width = 0.75) +
   coord_flip() +
-  scale_fill_manual(name = '', values = tool_colours, guide = FALSE) +
+  scale_fill_manual(name = '', values = TOOL_COLOURS, guide = "none") +
   labs(x = '', y = 'Proportion of Predictions') +
   scale_x_discrete(labels = c(good='|Pred - True| ≤ 1', best='Best Model', best_good='Both')) +
   theme(axis.text.x = element_markdown(),
@@ -78,12 +97,17 @@ p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
         legend.box.spacing = unit(1, "mm"))
 
 ### Figure Assembly ###
-size <- theme(text = element_text(size = 12))
-p1 <- p_rep_ubi + labs(tag = 'A') + sizet
+size <- theme(text = element_text(size = 10))
+p1 <- p_preds + labs(tag = 'A') + size
+p2 <- p_pred_diff + labs(tag = 'B') + size
+p3 <- p_pssm_cor + labs(tag = 'B') + size
+p4 <- p_pssm_summary + labs(tag = 'C') + size
 
-figure2 <- multi_panel_figure(width = 150, height = 150, columns = 2, rows = 2,
-                              panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
-  fill_panel(p1, row = 1, column = 1)
+figure2 <- multi_panel_figure(width = c(75, 75), height = c(80, 40, 60), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
+  fill_panel(p1, row = 1, column = 1:2) %>%
+  fill_panel(p2, row = 2, column = 1:2) %>%
+  fill_panel(p3, row = 3, column = 1) %>%
+  fill_panel(p4, row = 3, column = 2)
 
 ggsave('figures/figures/figure2.pdf', figure2, width = figure_width(figure2), height = figure_height(figure2),
        units = 'mm', device = cairo_pdf())

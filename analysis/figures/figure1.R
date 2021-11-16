@@ -50,8 +50,7 @@ p3 <- p_information + labs(tag = 'C') + size
 p4 <- p_graphcnn + labs(tag = 'D') + size
 p5 <- p_speed + labs(tag = 'E') + size
 
-figure1 <- multi_panel_figure(width = c(75, 75), height = c(65, 75/2, 75/2, 30),
-                              panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
+figure1 <- multi_panel_figure(width = c(75, 75), height = c(65, 75/2, 75/2, 30), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
   fill_panel(p1, row = 1, column = 1:2) %>%
   fill_panel(p2, row = 2, column = 1) %>%
   fill_panel(p3, row = 3, column = 1) %>%
