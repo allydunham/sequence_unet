@@ -29,7 +29,7 @@ protein_lengths <- tibble(protein = names(fasta), length = Biostrings::width(fas
   extract(protein, into = c("source", "protein"), regex = "([a-z]{2})\\|([0-9A-Z]*)\\|.*") %>%
   mutate(source = c(tr="TrEMBL", sp="SwissProt")[source])
 
-species <- readxl::read_xlsx("data/abundance/muller_species.xlsx", sheet = 2)
+species <- readxl::read_xlsx("data/abundance/muller_species.xlsx", sheet = 2, col_types = "text")
 
 protein_groups <- str_split(abundance$proteins, ";")
 group_counts <- map_int(protein_groups, length)
