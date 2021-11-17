@@ -34,6 +34,8 @@ TOOL_COLOURS <- c(`PreGraph UNET`="#39f0f5",
                   SPBuild="#f300ff",
                   `FoldX` = "#b2df8a")
 
+KINGDOM_COLOURS <- c(Eukaryote = "#984ea3", Archea = "#e41a1c", Bacteria = "#4daf4a")
+
 ### Functions ###
 pretty_p_values <- function(p, breaks = c(0.001, 0.01, 0.05), markdown_exp=FALSE, prefix_p=FALSE){
   breaks <- sort(breaks, decreasing = TRUE)
