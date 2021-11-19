@@ -125,4 +125,4 @@ figure4 <- multi_panel_figure(width = c(90, 90), height = c(45, 55, 90), panel_l
 ggsave('figures/figures/figure4.pdf', figure4, width = figure_width(figure4), height = figure_height(figure4),
        units = 'mm', device = cairo_pdf())
 ggsave('figures/figures/figure4.png', figure4, width = figure_width(figure4), height = figure_height(figure4),
-       units = 'mm')
+       units = 'mm', dpi = 600)
