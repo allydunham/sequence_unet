@@ -43,7 +43,7 @@ processed_abundance <- tibble(organism = rep(abundance$organism, times = group_c
          intensity_fc = log2((intensity + 1) / median(intensity)),
          intensity_fc_per_len = log2((intensity_per_len + 1) / median(intensity_per_len, na.rm = TRUE))) %>%
   ungroup() %>%
-  select(superkingdom, organism, taxid, source, protein, length, everything())
+  select(superkingdom, organism, short_species, taxid, source, protein, length, everything())
 
 ### SIFT ###
 # Import, summarise and cache Mycoplasma results
@@ -92,6 +92,6 @@ comb <- bind_rows(
   `UNET Top` = left_join(processed_abundance, top_model, by = c("protein" = "gene")) %>% drop_na(mean_mut),
   .id = "tool"
 ) %>%
-  select(superkingdom, organism, taxid, source, protein, length, tool, everything()) %>%
+  select(superkingdom, organism, short_species, taxid, source, protein, length, tool, everything()) %>%
   arrange(superkingdom, organism, protein, tool)
 write_tsv(comb, "data/abundance/muller_proteomics_processed.tsv")
