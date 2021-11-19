@@ -34,7 +34,7 @@ p_preds <- select(pssm_preds, -diff) %>%
 p_pred_diff <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
   geom_tile(aes(y = mut), colour = "grey") +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
-  scale_fill_gradient2(name = "Difference", low = "#b2182b", high = "#2166ac") +
+  scale_fill_gradient2(name = "Difference", low = "#b2182b", high = "#2166ac", limits = c(-0.8, 0.8)) +
   scale_x_continuous(expand = expansion(0), breaks = c(1, 10, 20, 30, 40, 46)) +
   scale_y_discrete(guide = guide_axis(n.dodge = 2)) +
   guides(fill = guide_colourbar(barwidth = unit(2, "mm"), title.vjust = 1)) +
@@ -54,12 +54,12 @@ pssm_cor <- group_by(pssm_models, model) %>%
 p_pssm_cor <- ggplot(pssm_cor, aes(x = model, y = estimate, fill = model, ymin = conf.low, ymax = conf.high)) +
   geom_col(width = 0.6, show.legend = FALSE) +
   geom_errorbar(width = 0.5) +
-  coord_flip() +
   scale_fill_manual(name = 'Model', values = TOOL_COLOURS) +
-  labs(y = "Pearson Correlation Coefficient") +
-  theme(axis.title.y = element_blank(),
-        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
-        panel.grid.major.y = element_blank())
+  scale_y_continuous(expand = expansion(0), limits = c(0, 0.5)) +
+  labs(y = expression("Pearson's"~rho)) +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        axis.ticks.x = element_blank())
 
 ### Panel - Proportion best ###
 pssm_summary <- drop_na(pssm_models) %>%
@@ -81,33 +81,27 @@ pssm_summary <- drop_na(pssm_models) %>%
 
 p_pssm_summary <- ggplot(pssm_summary, aes(x = type, y = prop, fill = model)) +
   geom_col(position = 'dodge', width = 0.75) +
-  coord_flip() +
   scale_fill_manual(name = '', values = TOOL_COLOURS, guide = "none") +
-  labs(x = '', y = 'Proportion of Predictions') +
+  labs(x = '', y = 'Proportion') +
   scale_x_discrete(labels = c(good='|Pred - True| ≤ 1', best='Best Model', best_good='Both')) +
-  theme(axis.text.x = element_markdown(),
-        axis.ticks.x = element_blank(),
-        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
-        panel.grid.major.y = element_blank(),
-        legend.position = "top",
-        legend.key.size = unit(2, "mm"),
-        legend.margin = margin(0,0,0,0),
-        legend.box.spacing = unit(1, "mm"))
+  scale_y_continuous(expand = expansion(0)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        axis.ticks.x = element_blank())
 
 ### Figure Assembly ###
 size <- theme(text = element_text(size = 10))
 p1 <- p_preds + labs(tag = 'A') + size
 p2 <- p_pred_diff + labs(tag = 'B') + size
-p3 <- p_pssm_cor + labs(tag = 'B') + size
-p4 <- p_pssm_summary + labs(tag = 'C') + size
+p3 <- p_pssm_cor + labs(tag = 'C') + size
+p4 <- p_pssm_summary + labs(tag = 'D') + size
 
-figure2 <- multi_panel_figure(width = c(75, 75), height = c(80, 40, 60), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
-  fill_panel(p1, row = 1, column = 1:2) %>%
-  fill_panel(p2, row = 2, column = 1:2) %>%
-  fill_panel(p3, row = 3, column = 1) %>%
-  fill_panel(p4, row = 3, column = 2)
+figure2 <- multi_panel_figure(width = c(100, 50), height = rep(20,6), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
+  fill_panel(p1, row = 1:4, column = 1) %>%
+  fill_panel(p2, row = 5:6, column = 1) %>%
+  fill_panel(p3, row = 1:3, column = 2) %>%
+  fill_panel(p4, row = 4:6, column = 2)
 
 ggsave('figures/figures/figure2.pdf', figure2, width = figure_width(figure2), height = figure_height(figure2),
        units = 'mm', device = cairo_pdf())
 ggsave('figures/figures/figure2.png', figure2, width = figure_width(figure2), height = figure_height(figure2),
-       units = 'mm')
+       units = 'mm', dpi = 600)
