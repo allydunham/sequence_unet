@@ -10,7 +10,7 @@ setup(name='sequence_unet',
       packages=find_packages(include="sequence_unet"),
 	  include_package_data=False,
       install_requires=['numpy', 'pandas', 'biopython', 'tensorflow>=2.0',
-                        'proteinnetpy>=0.5.2', 'tqdm'],
+                        'proteinnetpy>=1.0.0', 'tqdm'],
       extras_require={},
       entry_points = {
         'console_scripts': ['sequence_unet=sequence_unet.scripts.make_preds:main',
