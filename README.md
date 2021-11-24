@@ -10,7 +10,7 @@ The package can download, load and predict with 8 variant trained models, which 
 
 ## Installation
 
-1. Install ProteinNetPy requirement from github: `pip install git+https://github.com/allydunham/proteinnetpy`
+1. Install ProteinNetPy requirement from GitHub: `pip install git+https://github.com/allydunham/proteinnetpy`
 2. Install Sequence UNET: `pip install git+https://github.com/allydunham/sequence_unet`. Pip will handle installing all other dependancies.
 
 The python package is contained in the `sequence_unet` directory, with documentation in the `docs` directory.
@@ -26,7 +26,7 @@ The python package requires:
 * Numpy
 * Pandas
 * Biopython
-* tqdm
+* TQDM
 * [ProteinNetPy](https://github.com/allydunham/proteinnetpy)
 
 Figure generation and performance analysis was performed in R 4.0, largely using [Tidyverse](https://www.tidyverse.org/) packages.
