@@ -1,4 +1,4 @@
-Sequence UNET Scripts
+Scripts
 ==============================
 
 `sequence_unet` also contains several convinience scripts to help work with trained models.

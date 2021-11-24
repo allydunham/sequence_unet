@@ -1,4 +1,4 @@
-Metrics Module
+Metrics
 ======================
 
 .. automodule:: sequence_unet.metrics

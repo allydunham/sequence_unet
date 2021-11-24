@@ -1,4 +1,4 @@
-Models Module
+Models
 ======================
 
 .. automodule:: sequence_unet.models

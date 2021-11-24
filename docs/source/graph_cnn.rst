@@ -1,4 +1,4 @@
-GraphCNN Module
+GraphCNN
 ======================
 
 .. automodule:: sequence_unet.graph_cnn

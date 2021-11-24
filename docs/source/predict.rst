@@ -1,4 +1,4 @@
-Predict Module
+Predict
 ======================
 
 .. automodule:: sequence_unet.predict
