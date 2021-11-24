@@ -1,15 +1,20 @@
 """
 Load, download and initialise trained and untrained Sequence UNET models.
 """
-import requests
+from logging import warning
 import os
+import ftplib
+import tqdm
+from shutil import unpack_archive
+from contextlib import closing
 from tensorflow.keras import layers, models
 
 from sequence_unet.graph_cnn import GraphCNN
 from sequence_unet import metrics
 
 __all__ = ["sequence_unet", "cnn_top_model", "download_trained_model",
-           "download_all_models", "load_trained_model", "MODELS", "CUSTOM_OBJECTS"]
+           "download_all_models", "load_trained_model", "MODELS", "CUSTOM_OBJECTS",
+           "BIOSTUDIES_FTP"]
 
 CUSTOM_OBJECTS = {
     "masked_binary_crossentropy": metrics.masked_binary_crossentropy,
@@ -22,21 +27,32 @@ Dictionary containing the object mappings required to load Sequence UNET
 Keras models using `tf.keras.models.load_model`.
 """
 
-MODELS = {
-    'freq_classifier': '',
-    'pregraph_freq_classifier': '',
-    'pssm_predictor': '',
-    'pregraph_pssm_predictor': '',
-    'patho_top': '',
-    'pregraph_patho_top': '',
-    'patho_finetune': '',
-    'pregraph_patho_finetune': ''
-}
+BIOSTUDIES_FTP = "biostudies/nfs/S-BSST/732/S-BSST732"
 """
-Dictionary mapping the IDs and download locations of each trained Sequence UNET model.
+FTP path to the BioStudies directory containing the model data
 """
 
-def download_trained_model(model, root="."):
+MODELS = [
+    'freq_classifier',
+    'pregraph_freq_classifier',
+    'pssm_predictor',
+    'pregraph_pssm_predictor',
+    'patho_top',
+    'pregraph_patho_top',
+    'patho_finetune',
+    'pregraph_patho_finetune'
+]
+"""
+List of model IDs for each trained Sequence UNET model. HDF5 (.h5) and SavedModel (.tf.tar.gz) files are available for each model at {BIOSTUDIES_FTP}/Files/{name}.{ext}.
+"""
+
+def _make_progess_file_writer(file, pbar):
+    def f(data):
+        file.write(data)
+        pbar.update(len(data))
+    return f
+
+def download_trained_model(model, root=".", model_format="tf"):
     """
     Download a trained Sequence UNET model.
 
@@ -57,10 +73,12 @@ def download_trained_model(model, root="."):
 
     Parameters
     ----------
-    model : str
-            Sequence UNET model to download (see options in description and `MODELS`).
-    root  : str
-            Root directory to download to.
+    model        : str
+        Sequence UNET model to download (see options in description and `MODELS`).
+    root         : str
+        Root directory to download to.
+    model_format : {'tf', 'h5'}
+        Format to download the models in.
 
     Returns
     -------
@@ -70,12 +88,36 @@ def download_trained_model(model, root="."):
     if not os.path.isdir(root):
         raise FileNotFoundError(f"No directory found at {root}")
 
-    if model not in MODELS.keys():
-        raise ValueError(f"model not recognised. Must one of: {', '.join(MODELS.keys())}")
+    if model not in MODELS:
+        raise ValueError(f"model not recognised. Must one of: {', '.join(MODELS)}")
 
-    # download model
+    if not model_format in ('tf', 'h5'):
+        raise ValueError(f"Model format ({model_format}) not recognised. Must be tf or h5")
 
-def download_all_models(root="."):
+    ext = "tf.tar.gz" if model_format == 'tf' else 'h5'
+    dl_path = f"{root}/{model}.{ext}"
+
+    with closing(ftplib.FTP("ftp.ebi.ac.uk")) as ftp:
+        ftp.login()
+        ftp.cwd(f"{BIOSTUDIES_FTP}/Files/")
+        file_size = ftp.size(f"{model}.{ext}")
+        pbar = tqdm.tqdm(desc=f"Downloading {model}", total=file_size, unit="B", unit_scale=True)
+        with open(dl_path, "w+b") as dl_file, pbar as pbar:
+            writer = _make_progess_file_writer(dl_file, pbar)
+            res = ftp.retrbinary(f"RETR {model}.{ext}", writer)
+
+        if not res.startswith('226 Transfer complete.'):
+            warning(f"{model} download incomplete. Deleting partial file.")
+            os.remove(dl_path)
+            return None
+
+    if model_format == "tf":
+        unpack_archive(dl_path, format="gztar")
+        dl_path = dl_path[:-7] # remove .tar.gz
+
+    return dl_path
+
+def download_all_models(root=".", model_format="tf"):
     """
     Download all trained Sequence UNET models.
 
@@ -83,20 +125,29 @@ def download_all_models(root="."):
 
     Parameters
     ----------
-    root  : str
-            Root directory to download to.
+    root         : str
+        Root directory to download to.
+    model_format : {'tf', 'h5'}
+        Format to download the models in.
 
     Returns
     -------
-    None
+    Dict
+        Dictionary of paths to the downloaded models, keyed by the model
     """
     if not os.path.isdir(root):
         raise FileNotFoundError(f"No directory found at {root}")
 
-    for model in MODELS.keys():
-        download_trained_model(model, root=root)
+    if not model_format in ('tf', 'h5'):
+        raise ValueError(f"Model format ({model_format}) not recognised. Must be tf or h5")
 
-def load_trained_model(model, root=".", download=False):
+    paths = {}
+    for model in MODELS:
+        paths[model] = download_trained_model(model, root=root, model_format=model_format)
+
+    return paths
+
+def load_trained_model(model, root=".", download=False, model_format="tf"):
     """
     Load Sequence UNET models.
 
@@ -105,12 +156,14 @@ def load_trained_model(model, root=".", download=False):
 
     Parameters
     ----------
-    model    : str
+    model        : str
         Model to load. This can be a direct path or a model name (see `MODELS`), with paths taking precedence. If a name is passed it will be searched for in root.
-    root     : str
+    root         : str
         Root directory to locate models passed by name. It is ignored if a full path is passed.
-    download : bool
+    download     : bool
         Download the requested model if it is not located.
+    model_format : str
+        Format for the model if model is an ID rather than a full path.
 
     Returns
     -------
@@ -120,11 +173,11 @@ def load_trained_model(model, root=".", download=False):
     if os.path.exists(model):
         path = model
 
-    elif model in MODELS.keys():
-        path = f"{root}/{model}.tf"
+    elif model in MODELS:
+        path = f"{root}/{model}.{model_format}"
         if not os.path.exists(path):
             if download:
-                download_trained_model(model, root)
+                download_trained_model(model, root, model_format=model_format)
             else:
                 raise FileNotFoundError("No model found at {path}")
 
