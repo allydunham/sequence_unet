@@ -54,6 +54,8 @@ def arg_parser():
     parser.add_argument('--files', '-n', default=0, type=int, help="Number of files to split into")
     parser.add_argument('--seqs', '-s', default=0, type=int, help="Number of sequences per file")
 
+    return parser
+
 def parse_args():
     """Process arguments"""
     parser = arg_parser()

@@ -44,5 +44,7 @@ def arg_parser():
     parser.add_argument('--iupac', '-i', action="store_true",
                         help="Filter to only include cannonical amino acids")
 
+    return parser
+
 if __name__ == "__main__":
     main()
