@@ -1,5 +1,7 @@
 numpy
 pandas
 biopython
-tensorflow>=2.0'
+tensorflow>=2.0
+tqdm
+sphinx-argparse
 git+https://github.com/allydunham/proteinnetpy@master

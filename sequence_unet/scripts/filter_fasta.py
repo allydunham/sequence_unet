@@ -14,7 +14,7 @@ def main(args):
     """
     Main
     """
-    args = parse_args()
+    args = arg_parser().parse_args()
 
     with open(args.ids, mode="r") as id_file:
         ids = set(i.strip() for i in id_file)
@@ -30,10 +30,8 @@ def main(args):
             if ident in ids:
                 print(record.format("fasta"), file=sys.stdout, end="")
 
-def parse_args():
-    """
-    Parse comman line arguments
-    """
+def arg_parser():
+    """Argument parser"""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -45,8 +43,6 @@ def parse_args():
                         help="Fasta file is Uniprot formatted and ID list contains Uniprot IDs")
     parser.add_argument('--iupac', '-i', action="store_true",
                         help="Filter to only include cannonical amino acids")
-
-    return parser.parse_args()
 
 if __name__ == "__main__":
     main()

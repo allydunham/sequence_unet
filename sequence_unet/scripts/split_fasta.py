@@ -43,8 +43,8 @@ def main():
         fasta_file.close()
         raise err
 
-def parse_args():
-    """Process arguments"""
+def arg_parser():
+    """Argument parser"""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -54,6 +54,9 @@ def parse_args():
     parser.add_argument('--files', '-n', default=0, type=int, help="Number of files to split into")
     parser.add_argument('--seqs', '-s', default=0, type=int, help="Number of sequences per file")
 
+def parse_args():
+    """Process arguments"""
+    parser = arg_parser()
     args = parser.parse_args()
 
     if bool(args.files) == bool(args.seqs):

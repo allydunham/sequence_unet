@@ -51,8 +51,8 @@ def main():
     for i, df in enumerate(preds):
         df.to_csv(sys.stdout, sep="\t", index=False, header=i==0)
 
-def parse_args():
-    """Process arguments"""
+def arg_parser():
+    """Argument parser"""
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -69,13 +69,18 @@ def parse_args():
                          type=int, default=6)
 
     options.add_argument('--wide', "-w", help="Output a wide table", action="store_true")
-    options.add_argument('--pssm', "-p", help="Convert output frequency predictions to PSSMs",
+    options.add_argument('--pssm', "-s", help="Convert output frequency predictions to PSSMs",
 	                     action="store_true")
 
     options.add_argument('--model_dir', "-m", help="Directory to locate/download model files to")
     options.add_argument('--download', "-d", action="store_true",
                          help="Download model if not located")
 
+    return parser
+
+def parse_args():
+    """Process arguments"""
+    parser = arg_parser()
     args = parser.parse_args()
 
     if args.fasta is None and args.proteinnet is None:
