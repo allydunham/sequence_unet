@@ -1,5 +1,5 @@
-Metrics
-======================
+sequence_unet.metrics
+=====================
 
 .. automodule:: sequence_unet.metrics
    :members:

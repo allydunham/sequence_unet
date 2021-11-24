@@ -5,8 +5,5 @@ Sequence UNET
    :maxdepth: 2
    :caption: Contents:
 
-   models
-   predict
-   metrics
-   graph_cnn
+   modules
    scripts

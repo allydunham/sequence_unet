@@ -1,5 +1,5 @@
-Predict
-======================
+sequence_unet.predict
+=====================
 
 .. automodule:: sequence_unet.predict
    :members:

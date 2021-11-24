@@ -1,5 +1,5 @@
-Scripts
-==============================
+Command Line Tools
+==================
 
 `sequence_unet` also contains several convinience scripts to help work with trained models.
 

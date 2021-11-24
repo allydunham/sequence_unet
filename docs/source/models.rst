@@ -1,5 +1,5 @@
-Models
-======================
+sequence_unet.models
+====================
 
 .. automodule:: sequence_unet.models
    :members:
