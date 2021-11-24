@@ -187,23 +187,16 @@ def load_trained_model(model, root=".", download=False, model_format="tf"):
 
     return models.load_model(path, custom_objects=CUSTOM_OBJECTS)
 
-def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
-                  graph_layers=None, graph_activation="relu",
+def sequence_unet(filters=8, kernel_size=5, num_layers=4, output_size=20,
+                  dropout=0, graph_layers=None, graph_activation="relu",
                   conv_activation="relu", pred_activation="sigmoid",
                   kernel_regulariser=None, batch_normalisation=False):
     """
     Initialise a Sequence UNET TensorFlow Keras model.
 
     Generate a functional style Keras Sequence UNET model.
-
-    Expected input: (B, N, 20) arrays with B batches of Nx20 matrices, representing
-                    sequences with one hot encoding on each row. An additional (B, N, N)
-                    array with NxN contact graphs is required when graph_layers is not none.
-                    The UNET architecture means N must be divisble by 2^(num_layers - 1).
-                    This can be achieved with padding and masking.
-
-    Output:         (B, N, 20) arrays of B batches of Nx20 arrays, with
-                    the predicted features of each AA at each position as rows.
+    This model takes one-hot encoded sequence and optionally inverted residue disance matrix structural information (see `graph_cnn.contact_graph`) and generates a matrix of predictions for each position in the sequence.
+    It is a 1D CNN based model that uses a U-shaped compression and decompression architecture to spread information through the sequence.
 
     Parameters
     ----------
@@ -213,6 +206,8 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
         Width of 1D convolutional kernals.
     num_layers           : int
         Number of down/up sampling layers.
+    output_size          : int
+        Number of output predictions for each position in the sequence. I.e. the number of columns in the output matrix.
     dropout              : float
         Proportion of neurons dropped out between layers.
     graph_layers         : int or None
@@ -232,6 +227,20 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
     -------
     tf.keras.Model
         The Sequence UNET model
+
+    Notes
+    -----
+    Expected input:
+        (B, N, 20) arrays with B batches of Nx20 matrices, representing
+        sequences with one hot encoding on each row. An additional (B, N, N)
+        array with NxN contact graphs is required when graph_layers is not none.
+        The UNET architecture means N must be divisble by 2^(num_layers - 1).
+        This can be achieved with padding and masking.
+
+    Output:
+        (B, N, 20) arrays of B batches of Nx20 arrays, with
+        the predicted features of each AA at each position as rows.
+
     """
     num_layers = num_layers - 1 # 0 index layers
 
@@ -300,7 +309,7 @@ def sequence_unet(filters=8, kernel_size=5, num_layers=4, dropout=0,
         if dropout:
             x = layers.SpatialDropout1D(dropout, name=f'up_{i}_dropout')(x)
 
-    preds = layers.Conv1D(20, 1, 1, activation=pred_activation, name="predictor",
+    preds = layers.Conv1D(output_size, 1, 1, activation=pred_activation, name="predictor",
                           kernel_regularizer=kernel_regulariser)(x)
 
     return models.Model(inputs=inputs, outputs=preds)
