@@ -20,7 +20,7 @@ preds <- bind_rows(
 p_preds <- ggplot(preds, aes(x = position, fill = pred)) +
   geom_tile(aes(y = mut), colour = "grey") +
   geom_tile(aes(y = wt), fill = NA, colour = "black") +
-  scale_fill_gradient2(name = "P(del)", breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0, 1), midpoint = 0.5, low = "#2166ac", high = "#b2182b") +
+  scale_fill_gradient2(name = "P(del)", breaks = c(0, 0.25, 0.44, 0.75, 1), limits = c(0, 1), midpoint = 0.44, low = "#2166ac", high = "#b2182b") +
   scale_x_continuous(expand = expansion(0), breaks = c(1, seq(10, 90, 10))) +
   scale_y_discrete(guide = guide_axis(n.dodge = 2)) +
   guides(fill = guide_colourbar(barwidth = unit(5, "mm"), title.vjust = 1),

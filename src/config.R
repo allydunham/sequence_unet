@@ -20,19 +20,19 @@ theme_set(theme_pubclean() + theme(legend.position = 'right',
                                    legend.key = element_blank()))
 
 ### Constants ###
-TOOL_COLOURS <- c(`PreGraph UNET`="#39f0f5",
-                  UNET="#1f78b4",
+TOOL_COLOURS <- c(`PreGraph UNET`="#cab2d6",
+                  UNET="#6a3d9a",
                   `UNET (Finetune)` = "#e31a1c",
                   `PreGraph UNET (Finetune)` = "#fb9a99", 
-                  `UNET (Top)` = "#6a3d9a",
-                  `PreGraph UNET (Top)` = "#cab2d6",
-                  `Baseline CNN`="#ff7f00",
-                  `Baseline ClinVar` = "#ff7f00",
-                  `Baseline Frequency` = "#fdbf6f",
-                  BLOSUM62="#717171",
-                  SIFT4G="#33a02c",
-                  SPBuild="#f300ff",
-                  `FoldX` = "#b2df8a")
+                  `UNET (Top)` = "#1f78b4",
+                  `PreGraph UNET (Top)` = "#a6cee3",
+                  `Baseline CNN`="#33a02c",
+                  `Baseline Frequency` = "#b2df8a",
+                  `Baseline ClinVar` = "#33a02c",
+                  BLOSUM62="#b15928",
+                  SIFT4G="#e6ab02",
+                  SPBuild="#e78ac3",
+                  `FoldX` = "#66c2a5")
 
 KINGDOM_COLOURS <- c(Eukaryote = "#984ea3", Archea = "#e41a1c", Bacteria = "#4daf4a")
 
