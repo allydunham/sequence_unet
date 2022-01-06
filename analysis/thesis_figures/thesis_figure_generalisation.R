@@ -128,7 +128,7 @@ figure <- multi_panel_figure(width = c(90, 90), height = c(45, 55, 90), panel_la
   fill_panel(p3, row = 3, column = 1) %>%
   fill_panel(p4, row = 3, column = 2)
 
-ggsave('figures/thesis_figure_generalisation.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm',
+ggsave('figures/thesis_figures/thesis_figure_generalisation.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm',
        device = cairo_pdf)
-ggsave('figures/thesis_figure_generalisation.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
-ggsave('figures/thesis_figure_generalisation.png', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figures/thesis_figure_generalisation.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figures/thesis_figure_generalisation.png', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')

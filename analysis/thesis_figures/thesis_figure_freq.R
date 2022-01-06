@@ -33,10 +33,11 @@ classifier_performance <- read_tsv("data/freq/all_model_testing.tsv") %>%
 metric_labs <- c(accuracy="Accuracy", recall="Recall", precision="Precision", f1="F1 Score", kappa="Cohen's &kappa;")
 p_performance <- ggplot(classifier_performance, aes(x = model, y = value, fill = model)) + 
   facet_wrap(~metric, nrow = 1, scales = "free_y", labeller = labeller(metric = metric_labs)) + 
-  geom_boxplot(outlier.shape = 20, size = 0.25) +
+  geom_boxplot(outlier.shape = 20, size = 0.25, outlier.size = 0.5) +
   coord_cartesian(clip = "off") +
-  scale_fill_manual(name = "", values = tool_colours) +
+  scale_fill_manual(name = "", values = tool_colours[levels(classifier_performance$model)]) +
   scale_y_continuous(limits = function(x) if (any(x < 0)) c(-0.5, 1) else c(0, 1)) +
+  guides(fill = guide_legend(nrow = 1)) +
   theme(legend.position = "bottom",
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
@@ -54,12 +55,24 @@ classifier_auc <- distinct(classifier_roc, model, model_auc, auc) %>%
   mutate(fpr = 1, tpr = c(0.23, 0.18, 0.13, 0.08, 0.03),
          col = tool_colours[model])
 
+thresholds <- tibble(model=c("UNET", "PreGraph UNET", "Baseline CNN", "BLOSUM62", "SIFT4G"),
+                     threshold=c(0.5, 0.5, 0.5, -2, 0.05)) %>%
+  left_join(classifier_roc, by = "model") %>%
+  mutate(thresh_diff = abs(threshold - thresh)) %>%
+  group_by(model) %>%
+  filter(thresh_diff == min(thresh_diff)) %>%
+  select(model, threshold, tpr, fpr)
+
 p_roc <- ggplot(classifier_roc, aes(x = fpr, y = tpr, colour = model_auc, label = model_auc)) +
   geom_step(show.legend = FALSE) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(data = thresholds, mapping = aes(x = fpr, y = tpr, shape = "threshold"), inherit.aes = FALSE, show.legend = FALSE) +
   geom_text(data = classifier_auc, hjust = 1, show.legend = FALSE, size = 3.5) +
+  annotate(geom = "text", x = 1, y = 0.3, label = "Selected Threshold", hjust = 1, size = 3.5) +
+  annotate(geom = "point", x = 0.72, y = 0.3, shape = 19) +
   coord_fixed() +
   scale_colour_manual(name = "", values = structure(classifier_auc$col, names = as.character(classifier_auc$model_auc))) +
+  scale_shape_manual(values = c(threshold = 19)) +
   labs(x = "False Positive Rate", y = "True Positive Rate")
 
 #### Figure Assembly ####
@@ -72,5 +85,6 @@ figure <- multi_panel_figure(width = 150, height = c(50, 150), columns = 1,
   fill_panel(p1, row = 1, column = 1) %>%
   fill_panel(p2, row = 2, column = 1)
 
-ggsave('figures/thesis_figure_freq.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm', device = cairo_pdf)
-ggsave('figures/thesis_figure_freq.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figures/thesis_figure_freq.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm',
+       device = cairo_pdf)
+ggsave('figures/thesis_figures/thesis_figure_freq.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')

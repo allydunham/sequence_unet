@@ -96,6 +96,7 @@ figure <- multi_panel_figure(width = c(90, 80), height = c(80, 80),
   fill_panel(p2, row = 2, column = 1) %>%
   fill_panel(p3, row = 2, column = 2)
 
-ggsave('figures/thesis_figure_pssm.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm', device = cairo_pdf)
-ggsave('figures/thesis_figure_pssm.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
-ggsave('figures/thesis_figure_pssm.png', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figures/thesis_figure_pssm.pdf', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm',
+       device = cairo_pdf)
+ggsave('figures/thesis_figures/thesis_figure_pssm.tiff', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
+ggsave('figures/thesis_figures/thesis_figure_pssm.png', figure, width = figure_width(figure), height = figure_height(figure), units = 'mm')
