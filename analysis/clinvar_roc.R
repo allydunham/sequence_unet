@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Calculate ROC curves for ClinVar variants from the PSSM top models
+# Calculate ROC curves for ClinVar variants models
 source('src/config.R')
 source("src/analysis.R")
 data("BLOSUM62", package = "Biostrings")
