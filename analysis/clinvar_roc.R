@@ -2,16 +2,11 @@
 # Calculate ROC curves for ClinVar variants models
 source('src/config.R')
 source("src/analysis.R")
-data("BLOSUM62", package = "Biostrings")
 plots <- list()
-
-blosum <- as_tibble(BLOSUM62, rownames = 'wt') %>%
-  pivot_longer(-wt, names_to = 'mut', values_to = 'BLOSUM62')
 
 clinvar_stats <- read_tsv("data/clinvar/clinvar_test.tsv") %>% 
   mutate(pdb_id = str_to_upper(pdb_id)) %>%
-  select(uniprot, position, wt, mut, pdb_id, chain, pdb_pos, clnsig, clnsig_patho, foldx_ddg, sift_score) %>%
-  left_join(blosum, by = c("wt", "mut"))
+  select(uniprot, position, wt, mut, pdb_id, chain, pdb_pos, clnsig, clnsig_patho)
 
 preds <- bind_rows(
   # Trained on ProteinNet
@@ -36,14 +31,12 @@ preds <- bind_rows(
   select(-wt) %>%
   pivot_wider(names_from = model, values_from = pred) %>%
   left_join(clinvar_stats, ., by = c("pdb_id", "chain", "pdb_pos", "mut")) %>%
-  select(-pdb_id, -chain, -pdb_pos) %>%
-  rename(SIFT4G = sift_score, FoldX = foldx_ddg)
+  select(-pdb_id, -chain, -pdb_pos)
 
 # Scores where less than indicates deleterious
-less = c("SIFT4G", "BLOSUM62")
 roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
-  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less), max_steps = 6000)) %>%
+  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = TRUE, max_steps = 6000)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
