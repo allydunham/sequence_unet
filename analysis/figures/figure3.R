@@ -101,9 +101,18 @@ classifier_auc <- distinct(classifier_roc, model, model_auc, auc) %>%
   mutate(fpr = 1, tpr = c(0.23, 0.18, 0.13, 0.08, 0.03),
          col = TOOL_COLOURS[model])
 
+thresholds <- tibble(model=c("UNET", "PreGraph UNET", "Baseline CNN", "BLOSUM62", "SIFT4G"),
+                     threshold=c(0.5, 0.5, 0.5, -2, 0.05)) %>%
+  left_join(classifier_roc, by = "model") %>%
+  mutate(thresh_diff = abs(threshold - thresh)) %>%
+  group_by(model) %>%
+  filter(thresh_diff == min(thresh_diff)) %>%
+  select(model, threshold, tpr, fpr, precision)
+
 p_roc <- ggplot(classifier_roc, aes(x = fpr, y = tpr, colour = model)) +
   geom_step(show.legend = FALSE) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(data = thresholds, mapping = aes(x = fpr, y = tpr), shape = 20, inherit.aes = FALSE, show.legend = FALSE) +
   coord_fixed() +
   scale_colour_manual(name = "", values = TOOL_COLOURS[names(TOOL_COLOURS) %in% classifier_auc$model]) +
   labs(x = "False Positive Rate", y = "True Positive Rate")
@@ -122,6 +131,7 @@ p_pr <- ggplot(drop_na(classifier_roc), aes(x = tpr, y = precision, colour = mod
   geom_step(direction = "vh", show.legend = FALSE) +
   geom_step(data = pr_pseudo, direction = "vh", linetype = "dashed", show.legend = FALSE) + 
   geom_hline(yintercept = 0.5, linetype = "dashed") +
+  geom_point(data = thresholds, mapping = aes(x = tpr, y = precision), shape = 20, inherit.aes = FALSE, show.legend = FALSE) +
   scale_colour_manual(name = "", values = TOOL_COLOURS[names(TOOL_COLOURS) %in% classifier_pr_auc$model]) +
   labs(x = "Recall", y = "Precision")
 
