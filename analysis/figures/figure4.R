@@ -3,6 +3,18 @@
 source('src/config.R')
 source("src/analysis.R")
 
+model_colours <- c(
+  `UNET (Top)` = "#1f78b4", `PreGraph UNET (Top)` = "#a6cee3",
+  `UNET (Finetune)` = "#e31a1c", `PreGraph UNET (Finetune)` = "#fb9a99",
+  `UNET` = "#6a3d9a", `PreGraph UNET` = "#cab2d6",
+  `Baseline ClinVar` = "#33a02c", `Baseline Frequency` = "#33a02c", 
+  `ClinPred` = "#989898", `REVEL` = "#989898", `MVP` = "#989898", `VEST4` = "#989898", `M-CAP` = "#989898",
+  `DEOGEN2` = "#989898", `CADD` = "#989898", `EVE` = "#e6ab02", `FATHMM-XF` = "#989898", `PolyPhen2` = "#989898",
+  `PROVEAN` = "#989898", `MutationAssessor` = "#989898", `MutPred` = "#989898", `FATHMM` = "#989898",
+  `SIFT4G` = "#e6ab02", `PrimateAI` = "#989898", `LIST S2` = "#989898", `MPC` = "#989898", `FATHMM-MKL` = "#989898",
+  `FoldX` = "#e6ab02", `DANN` = "#989898", `GenoCanyon` = "#989898", `GERP++` = "#989898", `BLOSUM62` = "#989898"
+)
+
 ### Panel - Example ###
 preds <- read_tsv("data/clinvar/preds/pn_testing_features.tsv") %>%
   filter(pdb_id == "TBM#T0865")
@@ -17,109 +29,69 @@ p_preds <- ggplot(preds, aes(x = position, fill = pred)) +
   theme(panel.grid.major.y = element_blank(),
         axis.ticks.y = element_blank())
 
-### Panel - Performance overview ###
-clinvar_acc <- bind_rows(
-  # Trained on ProteinNet
-  `Baseline Frequency` = read_tsv("data/clinvar/preds/baseline_freq.tsv"),
-  `UNET` = read_tsv("data/clinvar/preds/unet_freq.tsv"),
-  `PreGraph UNET` = read_tsv("data/clinvar/preds/unet_freq_structure.tsv"),
-  
-  # Trained on ClinVar (incl. some ProteinNet pre-training for some models)
-  `Baseline ClinVar` = read_tsv("data/clinvar/preds/baseline_clinvar.tsv"),
-  `UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_features_top.tsv"),
-  `PreGraph UNET (Top)` = read_tsv("data/clinvar/preds/unet_freq_structure_features_top.tsv"),
-  `UNET (Finetune)` = read_tsv("data/clinvar/preds/unet_freq_finetune.tsv"),
-  `PreGraph UNET (Finetune)` = read_tsv("data/clinvar/preds/unet_freq_structure_finetune.tsv"),
-  .id = "model"
-) %>%
-  select(-wt) %>%
-  pivot_wider(names_from = model, values_from = pred) %>% 
-  {
-    t <- read_tsv("data/clinvar/clinvar_test.tsv") %>% 
-      mutate(pdb_id = str_to_upper(pdb_id)) %>%
-      select(uniprot, position, wt, mut, pdb_id, chain, pdb_pos, clnsig, clnsig_patho, foldx_ddg, sift_score)
-    left_join(t, ., by = c("pdb_id", "chain", "pdb_pos", "mut"))
-  } %>%
-  select(-pdb_id, -chain, -pdb_pos) %>%
-  rename(SIFT4G = sift_score, FoldX = foldx_ddg) %>%
-  mutate( FoldX = FoldX > 1, SIFT4G = SIFT4G < 0.05, `Baseline Frequency` = `Baseline Frequency` > 0.5,
-          UNET = UNET > 0.5, `PreGraph UNET` = `PreGraph UNET` > 0.5, `Baseline ClinVar` = `Baseline ClinVar` > 0.5,
-          `UNET (Top)` = `UNET (Top)` > 0.5, `PreGraph UNET (Top)` = `PreGraph UNET (Top)` > 0.5,
-          `UNET (Finetune)` = `UNET (Finetune)` > 0.5, `PreGraph UNET (Finetune)` = `PreGraph UNET (Finetune)` > 0.5) %>%
-  select(true = clnsig_patho, FoldX:`PreGraph UNET (Finetune)`) %>%
-  pivot_longer(-true, names_to = "model", values_to = "pred") %>%
-  drop_na() %>%
-  group_by(model) %>%
-  summarise(tp = sum(pred & true),
-            tn = sum(!pred & !true),
-            fp = sum(pred & !true),
-            fn = sum(!pred & true)) %>%
-  mutate(accuracy = (tp + tn) / (tp + tn + fp + fn),
-         f1 = 2 * tp / (2 * tp + fp + fn),
-         kappa = 2 * (tp * tn - fn * fp) / ((tp + fp) * (fp + tn) + (tp + fn) * (fn + tn)),
-         model = factor(model, levels = rev(names(TOOL_COLOURS)))) %>%
-  select(model, accuracy, f1, kappa) %>%
-  pivot_longer(-model, names_to = "metric", values_to = "value")
+### Panel - ClinVar ROC/PR AUC Summary ###
+clinvar_roc <- bind_rows(read_tsv("data/clinvar/roc.tsv"), read_tsv("data/clinvar/other_tools_roc.tsv")) %>%
+  filter(!str_detect(model, "UNET Thresh"))
 
-p_performance <- ggplot(clinvar_acc, aes(x = model, y = value, fill = model)) +
-  facet_wrap(~metric, scales = "free_x", strip.position = "bottom", nrow = 1,
-             labeller = as_labeller(c(accuracy = "Accuracy", f1 = "F1 Score", kappa = "Cohen's &kappa;"))) +
-  coord_flip() +
-  geom_col(width = 0.7, show.legend = FALSE) +
-  scale_fill_manual(values = TOOL_COLOURS) +
-  labs(x = "", y = "") + 
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_line(linetype = "dotted", colour = "grey"),
-        axis.ticks.y = element_blank(),
-        panel.spacing = unit(2, "mm"),
-        strip.placement = "outside",
-        strip.text = element_markdown(margin = margin(0, 0, 0, 0, unit = "mm")))
-
-### Panel - ROC curve ###
-clinvar_roc <- read_tsv("data/clinvar/roc.tsv") %>%
-  mutate(model_auc = auc_labeled_model(model, auc)) %>%
-  filter(!str_detect(model, "Thresh"))
-
-clinvar_auc <- distinct(clinvar_roc, model, model_auc, auc) %>%
+clinvar_auc <- distinct(clinvar_roc, model, auc, pr_auc) %>%
   arrange(desc(auc)) %>%
-  mutate(fpr = 1, tpr = rev(seq(from = 0.03, by = 0.05, length.out = n())))
+  mutate(model = factor(model, levels = rev(model)))
 
-p_clinvar <- ggplot(clinvar_roc, aes(x = fpr, y = tpr, colour = model, label = model_auc)) +
-  geom_step(show.legend = FALSE) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  geom_text(data = clinvar_auc, hjust = 1, show.legend = FALSE, size = 2.5) +
-  coord_fixed() +
-  scale_colour_manual(values = TOOL_COLOURS) +
-  labs(x = "False Positive Rate", y = "True Positive Rate")
+p_clinvar <- ggplot(clinvar_auc, aes(x = model, y = auc, fill = model)) +
+  geom_col(show.legend = FALSE, width = 0.5) +
+  scale_fill_manual(values = model_colours) +
+  scale_y_continuous(expand = expansion(0), limits = c(0, 1)) +
+  coord_flip() +
+  labs(x = "", y = "ClinVar AUC") +
+  theme(panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
+        panel.grid.major.y = element_blank(),
+        axis.ticks.y = element_blank())
 
-### Panel - Other generalisation datasets ###
-gen_roc <- bind_rows(DMS = read_tsv("data/dms/roc.tsv"), Jelier = read_tsv("data/jelier/roc.tsv"), .id = "type") %>%
-  select(type, model, auc) %>%
+### Panel - DMS Summary ###
+dms_cor <- read_tsv("data/dms/correlation.tsv") %>%
+  drop_na() %>%
+  arrange(desc(mean_spearman)) %>%
+  mutate(tool = factor(tool, levels = rev(tool)))
+
+p_dms <- ggplot(dms_cor, aes(x = tool, y = mean_spearman, fill = tool)) +
+  geom_col(show.legend = FALSE, width = 0.5) +
+  geom_errorbar(aes(ymin = mean_spearman - stderr_spearman, ymax = mean_spearman + stderr_spearman), width = 0.5) +
+  scale_fill_manual(values = model_colours) +
+  scale_y_continuous(expand = expansion(0), limits = c(0, 0.5)) +
+  labs(x = "", y = expression("Spearman's"~rho)) +
+  coord_flip() +
+  theme(panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
+        panel.grid.major.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+### Panel - Jelier Yeast Summary ###
+jelier_roc <- read_tsv("data/jelier/roc.tsv") %>%
+  select(model, auc) %>%
   distinct() %>%
-  mutate(model = factor(model, levels = reorder(model[type == "Jelier"], -auc[type == "Jelier"])))
+  arrange(desc(auc)) %>%
+  mutate(model = factor(model, levels = rev(model)))
 
-p_generalisation <- ggplot(gen_roc, aes(x = model, y = auc, fill = model)) +
-  facet_wrap(~type, ncol = 1) +
+p_jelier <- ggplot(jelier_roc, aes(x = model, y = auc, fill = model)) +
   geom_col(show.legend = FALSE, width = 0.5) +
   coord_flip() +
-  scale_fill_manual(values = TOOL_COLOURS) +
-  labs(y = "AUC") +
+  scale_fill_manual(values = model_colours) +
+  labs(y = "Jelier AUC") +
   lims(y = c(0,1)) +
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_line(linetype = "dotted", colour = "grey"),
         axis.title.y = element_blank())
 
 ### Figure Assembly ###
-size <- theme(text = element_text(size = 11))
+size <- theme(text = element_text(size = 10))
 p1 <- p_preds + labs(tag = 'A') + size
-p2 <- p_performance + labs(tag = 'B') + size
-p3 <- p_clinvar + labs(tag = 'C') + size
-p4 <- p_generalisation + labs(tag = 'D') + size
+p2 <- p_clinvar + labs(tag = 'B') + size
+p3 <- p_dms + labs(tag = 'C') + size
+p4 <- p_jelier + labs(tag = 'D') + size
 
-figure4 <- multi_panel_figure(width = c(90, 90), height = c(45, 55, 90), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
+figure4 <- multi_panel_figure(width = c(90, 90), height = c(45, 95, 50), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
   fill_panel(p1, row = 1, column = 1:2) %>%
-  fill_panel(p2, row = 2, column = 1:2) %>%
-  fill_panel(p3, row = 3, column = 1) %>%
+  fill_panel(p2, row = 2:3, column = 1) %>%
+  fill_panel(p3, row = 2, column = 2) %>%
   fill_panel(p4, row = 3, column = 2)
 
 ggsave('figures/figures/figure4.pdf', figure4, width = figure_width(figure4), height = figure_height(figure4),

@@ -37,6 +37,7 @@ preds <- bind_rows(
 roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
   group_modify(~calc_roc(.x, clnsig_patho, pred, greater = TRUE, max_steps = 6000)) %>%
+  mutate(pr_auc = pr_auc(tpr, precision)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))
