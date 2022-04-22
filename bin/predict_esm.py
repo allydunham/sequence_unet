@@ -41,7 +41,7 @@ def main():
 
     for i, records in enumerate(batch_proteinnet_data(proteinnet, batch_size=args.batch_size)):
         print(f"Predicting batch {i}", file=sys.stderr)
-        esm_input = [(i.id, "".join(i.primary)) for i in records]
+        esm_input = [(r.id, "".join(r.primary)) for r in records]
         _, _, batch_tokens = batch_converter(esm_input)
 
         with torch.no_grad():
@@ -49,9 +49,9 @@ def main():
         token_representations = results["representations"][33]
 
         for record, rep in zip(records, token_representations):
-            for i in range(len(record.primary)):
-                print(record.id, i + 1, record.primary[i], *record.evolutionary[:,i],
-                      *rep.numpy()[0,:], sep="\t", file=sys.stdout)
+            for p in range(len(record.primary)):
+                print(record.id, p + 1, record.primary[p], *record.evolutionary[:,p],
+                      *rep.numpy()[p,:], sep="\t", file=sys.stdout)
 
 def parse_args():
     """Process arguments"""
