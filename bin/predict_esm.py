@@ -28,7 +28,7 @@ def main():
     batch_converter = alphabet.get_batch_converter()
     model = model.eval()
 
-    if torch.cuda.is_available() and not args.nogpu:
+    if torch.cuda.is_available() and not args.no_gpu:
         model = model.cuda()
         print("Transferred model to GPU", file=sys.stderr)
 
