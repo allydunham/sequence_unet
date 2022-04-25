@@ -28,7 +28,9 @@ def main():
     batch_converter = alphabet.get_batch_converter()
     model = model.eval()
 
-    if torch.cuda.is_available() and not args.no_gpu:
+    use_gpu = torch.cuda.is_available() and not args.no_gpu
+
+    if use_gpu:
         model = model.cuda()
         print("Transferred model to GPU", file=sys.stderr)
 
@@ -44,9 +46,12 @@ def main():
         esm_input = [(r.id, "".join(r.primary)) for r in records]
         _, _, batch_tokens = batch_converter(esm_input)
 
+        if use_gpu:
+            batch_tokens = batch_tokens.to(device="cuda", non_blocking=True)
+
         with torch.no_grad():
             results = model(batch_tokens, repr_layers=[33], return_contacts=True)
-        token_representations = results["representations"][33]
+        token_representations = results["representations"][33].to(device="cpu")
 
         for record, rep in zip(records, token_representations):
             for p in range(len(record.primary)):
