@@ -58,12 +58,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('proteinnet', metavar='P', help="Input ProteinNet data")
+    parser.add_argument('proteinnet', metavar='P', type=str, help="Input ProteinNet data")
 
     parser.add_argument('--no_gpu', '-n', action="store_true",
                         help="Prevent GPU usage even when available")
 
-    parser.add_argument('--batch_size', '-b', default=5, help="Batch size")
+    parser.add_argument('--batch_size', '-b', default=5, type=int, help="Batch size")
 
     return parser.parse_args()
 
