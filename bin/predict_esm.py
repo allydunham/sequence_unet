@@ -26,10 +26,10 @@ def main():
 
     model, alphabet = torch.hub.load("facebookresearch/esm:main", "esm1b_t33_650M_UR50S")
     batch_converter = alphabet.get_batch_converter()
-    model.eval()
+    model = model.eval()
 
     if torch.cuda.is_available() and not args.nogpu:
-        model.cuda()
+        model = model.cuda()
         print("Transferred model to GPU", file=sys.stderr)
 
     filter_func = proteinnetpy.data.make_length_filter(max_length=1022)
