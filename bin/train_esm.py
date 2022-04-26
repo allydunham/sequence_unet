@@ -118,7 +118,8 @@ def main():
     size = len(dataloader.dataset)
     model.train()
     for epoch in range(5):
-        print(f"Epoch {epoch+1}\n-------------------------------")
+        print(f"Epoch {epoch+1}\n-------------------------------",
+              file=sys.stderr)
         for batch, (x, y) in enumerate(dataloader):
             x, y = x.float(), y.float()
 
@@ -132,7 +133,8 @@ def main():
             optimiser.step()
             if batch % 1000 == 0:
                 loss, current = loss.item(), batch * len(x)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]",
+                      file=sys.stderr)
 
     torch.save(model, args.model)
 
