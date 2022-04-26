@@ -106,7 +106,7 @@ def main():
     classifier = args.threshold is not None
 
     dataloader = torch.utils.data.DataLoader(ESM1bData(proteinnet=args.proteinnet,
-                                                       no_gpu=args.nogpu,
+                                                       no_gpu=args.no_gpu,
                                                        thresh=args.threshold),
                                              batch_size=1000)
 
@@ -135,9 +135,6 @@ def main():
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
     torch.save(model, args.model)
-
-
-
 
 def parse_args():
     """Process arguments"""
