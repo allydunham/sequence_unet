@@ -45,7 +45,7 @@ def main():
 
         t1 = time.perf_counter()
 
-        print(record.id, len(record), t1 - t0, sep="\t")
+        print(record.id, len(record), t1 - t0, sep="\t", file=sys.stdout)
 
 def parse_args():
     """Process arguments"""
