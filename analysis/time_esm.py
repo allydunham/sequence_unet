@@ -1,27 +1,15 @@
 #!/usr/bin/env python3
 """
-Run ESM1b on all sequences in a ProteinNet file. Produces a TSV file with columns for the record ID, position, wt, each PSSM frequency and each representation column.
+Time execution of ESM1b model using ProteinNet data
 """
 import sys
 import argparse
+import time
 import torch
 import proteinnetpy
 
-def batch_proteinnet_data(data, batch_size=5):
-    """
-    Generator yielding batches of ProteinNet records
-    """
-    records = []
-    for record in data:
-        records.append(record)
-        if len(records) == batch_size:
-            yield records
-            records = []
-
 def main():
-    """
-    Run ESM1b on input Fasta and format into a single output file
-    """
+    """Main"""
     args = parse_args()
 
     model, alphabet = torch.hub.load("facebookresearch/esm:main", "esm1b_t33_650M_UR50S")
@@ -38,12 +26,14 @@ def main():
     proteinnet = proteinnetpy.data.ProteinNetDataset(path=args.proteinnet, filter_func=filter_func,
                                                      preload=False)
 
-    print("id", "position", "wt", *proteinnetpy.record.AMINO_ACIDS,
-          *[f"rep{i}" for i in range(1,1281)], sep="\t", file=sys.stdout)
+    print("id", "length", "time", sep="\t", file=sys.stdout)
 
-    for i, records in enumerate(batch_proteinnet_data(proteinnet, batch_size=args.batch_size)):
-        print(f"Predicting batch {i}", file=sys.stderr)
-        esm_input = [(r.id, "".join(r.primary)) for r in records]
+    for record in proteinnet:
+        esm_input = [(record.id, "".join(record.primary))]
+
+        # Time from input generation to returning data to CPU
+        t0 = time.perf_counter()
+
         _, _, batch_tokens = batch_converter(esm_input)
 
         if use_gpu:
@@ -53,10 +43,9 @@ def main():
             results = model(batch_tokens, repr_layers=[33], return_contacts=True)
         token_representations = results["representations"][33].to(device="cpu")
 
-        for record, rep in zip(records, token_representations):
-            for p in range(len(record.primary)):
-                print(record.id, p + 1, record.primary[p], *record.evolutionary[:,p],
-                      *rep.numpy()[p,:], sep="\t", file=sys.stdout)
+        t1 = time.perf_counter()
+
+        print(record.id, len(record), t1 - t0, sep="\t")
 
 def parse_args():
     """Process arguments"""
@@ -66,9 +55,7 @@ def parse_args():
     parser.add_argument('proteinnet', metavar='P', type=str, help="Input ProteinNet data")
 
     parser.add_argument('--no_gpu', '-n', action="store_true",
-                        help="Prevent GPU usage even when available")
-
-    parser.add_argument('--batch_size', '-b', default=5, type=int, help="Batch size")
+                        help="Prevent GPU usage for ESM1b even when available")
 
     return parser.parse_args()
 
