@@ -125,12 +125,12 @@ def main():
             # Compute prediction error
             pred = model(x)
             loss = loss_fn(pred, y)
-            
+
             # Backpropagation
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
-            if batch % 100 == 0:
+            if batch % 1000 == 0:
                 loss, current = loss.item(), batch * len(x)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
