@@ -60,7 +60,7 @@ class ESM1bData(torch.utils.data.IterableDataset):
                 x = reps.numpy()[p,:]
                 y = record.evolutionary[:,p]
 
-                if self.thesh is not None:
+                if self.thresh is not None:
                     y = (y < self.thresh).astype(float)
 
                 yield x, y
