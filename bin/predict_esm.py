@@ -28,6 +28,7 @@ def main():
 
     # Load top model
     top_model = torch.load(args.model)
+    top_model = top_model.eval()
 
     # Load ESM1b
     esm_model, alphabet = torch.hub.load("facebookresearch/esm:main", "esm1b_t33_650M_UR50S")
@@ -63,7 +64,8 @@ def main():
         reps = results["representations"][33].to(device="cpu")
 
         for p in range(len(record)):
-            preds = top_model(reps.numpy()[p,:])
+            with torch.no_grad():
+                preds = top_model(reps[:,p,:]).numpy()[0,:]
             true = record.evolutionary[:,p]
 
             print(record.id, p + 1, record.primary[p], *true, *preds, sep="\t", file=sys.stdout)
