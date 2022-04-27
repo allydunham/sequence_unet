@@ -129,14 +129,14 @@ def main():
 
     esm_model, batch_converter = load_esm()
 
-    train_data = ESM1bData(proteinnet=args.train, no_gpu=args.no_gpu, thresh=args.threshold)
-    train_loader = torch.utils.data.DataLoader(train_data, esm=esm_model,
-                                               batch_converter=batch_converter, batch_size=1000)
+    train_data = ESM1bData(proteinnet=args.train, esm=esm_model, batch_converter=batch_converter,
+                           no_gpu=args.no_gpu, thresh=args.threshold)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=1000)
 
     if args.val is not None:
-        val_data = ESM1bData(proteinnet=args.val, no_gpu=args.no_gpu, thresh=args.threshold)
-        val_loader = torch.utils.data.DataLoader(val_data, esm=esm_model,
-                                                 batch_converter=batch_converter, batch_size=1000)
+        val_data = ESM1bData(proteinnet=args.val, esm=esm_model, batch_converter=batch_converter,
+                             no_gpu=args.no_gpu, thresh=args.threshold)
+        val_loader = torch.utils.data.DataLoader(val_data, batch_size=1000)
     else:
         val_loader = None
 
