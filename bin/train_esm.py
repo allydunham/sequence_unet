@@ -8,22 +8,30 @@ import torch
 import proteinnetpy
 import numpy as np
 
+def load_esm(no_gpu=False):
+    """
+    Load an ESM model and return the model and batch converter
+    """
+    model, alphabet = torch.hub.load("facebookresearch/esm:main", "esm1b_t33_650M_UR50S")
+    batch_converter = alphabet.get_batch_converter()
+    model = model.eval()
+
+    if torch.cuda.is_available() and not no_gpu:
+        model = model.cuda()
+        print("Transferred ESM1b to GPU", file=sys.stderr)
+
+    return model, batch_converter
+
 class ESM1bData(torch.utils.data.IterableDataset):
     """Iterable dataset returning ESM1b predictions from a ProteinNet dataset"""
-    def __init__(self, proteinnet, no_gpu=False, thresh=None):
+    def __init__(self, proteinnet, esm, batch_converter, no_gpu=False, thresh=None):
         super(ESM1bData).__init__()
         self.thresh = thresh
         self.use_gpu = torch.cuda.is_available() and not no_gpu
 
         # Load ESM1b modek
-        self.model, self.alphabet = torch.hub.load("facebookresearch/esm:main",
-                                                   "esm1b_t33_650M_UR50S")
-        self.batch_converter = self.alphabet.get_batch_converter()
-        self.model = self.model.eval()
-
-        if self.use_gpu:
-            self.model = self.model.cuda()
-            print("Transferred ESM1b to GPU", file=sys.stderr)
+        self.model = esm
+        self.batch_converter = batch_converter
 
         # Load ProtienNet data
         print(f"Initialising ProtienNet dataset: {proteinnet}", file=sys.stderr)
@@ -98,6 +106,20 @@ class LinearModel(torch.nn.Module):
         out = self.activation(out)
         return out
 
+def validate(model, val_loader, loss_fn):
+    """
+    Calcualte validation loss
+    """
+    with torch.no_grad():
+        losses = []
+        for batch, (x, y) in enumerate(val_loader):
+            x, y = x.float(), y.float()
+
+            # Compute prediction error
+            pred = model(x)
+            losses.append(loss_fn(pred, y).item())
+    return sum(losses) / len(losses)
+
 def main():
     """
     Run ESM1b on input Fasta and format into a single output file
@@ -105,22 +127,30 @@ def main():
     args = parse_args()
     classifier = args.threshold is not None
 
-    dataloader = torch.utils.data.DataLoader(ESM1bData(proteinnet=args.proteinnet,
-                                                       no_gpu=args.no_gpu,
-                                                       thresh=args.threshold),
-                                             batch_size=1000)
+    esm_model, batch_converter = load_esm()
+
+    train_data = ESM1bData(proteinnet=args.train, no_gpu=args.no_gpu, thresh=args.threshold)
+    train_loader = torch.utils.data.DataLoader(train_data, esm=esm_model,
+                                               batch_converter=batch_converter, batch_size=1000)
+
+    if args.val is not None:
+        val_data = ESM1bData(proteinnet=args.val, no_gpu=args.no_gpu, thresh=args.threshold)
+        val_loader = torch.utils.data.DataLoader(val_data, esm=esm_model,
+                                                 batch_converter=batch_converter, batch_size=1000)
+    else:
+        val_loader = None
 
     model = LinearModel(classifier=classifier)
 
     loss_fn = torch.nn.BCELoss() if classifier else torch.nn.MSELoss()
     optimiser = torch.optim.SGD(model.parameters(), lr=1e-3)
 
-    size = len(dataloader.dataset)
+    size = len(train_loader.dataset)
     model.train()
-    for epoch in range(5):
-        print(f"Epoch {epoch+1}\n-------------------------------",
+    for epoch in range(args.epochs):
+        print(f"\nEpoch {epoch+1}\n-------------------------------",
               file=sys.stderr)
-        for batch, (x, y) in enumerate(dataloader):
+        for batch, (x, y) in enumerate(train_loader):
             x, y = x.float(), y.float()
 
             # Compute prediction error
@@ -131,10 +161,15 @@ def main():
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
-            if batch % 1000 == 0:
-                loss, current = loss.item(), batch * len(x)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]",
-                      file=sys.stderr)
+            if batch % args.report_batch == 0:
+                loss = loss.item()
+                current = batch * len(x)
+                val_loss = validate(model, val_loader, loss_fn) if val_loader is not None else None
+
+                print(f"train loss: {loss:>7f}"
+                      f", val_loss: {val_loss:>7f}" if val_loss is not None else "",
+                      f" [{current:>5d}/{size:>5d}]",
+                      sep="", file=sys.stderr)
 
     torch.save(model, args.model)
 
@@ -143,7 +178,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('proteinnet', metavar='P', type=str, help="Input ProteinNet data")
+    parser.add_argument('--train', '-t', required=True, type=str, help="Training ProteinNet data")
+
+    parser.add_argument('--val', '-v', type=str, help="Validation ProteinNet data")
 
     parser.add_argument('--no_gpu', '-n', action="store_true",
                         help="Prevent GPU usage for ESM1b even when available")
@@ -154,6 +191,9 @@ def parse_args():
     parser.add_argument('--model', '-m', default="esm_top_model.pth", help="Path to save model")
 
     parser.add_argument('--epochs', '-e', default=3, type=int, help="Epochs to train for")
+
+    parser.add_argument('--report_batch', '-p', default=1000, type=int,
+                        help="Batch multiple to report at")
 
     return parser.parse_args()
 
