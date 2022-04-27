@@ -99,7 +99,7 @@ class LinearModel(torch.nn.Module):
     def __init__(self, classifier=False):
         super(LinearModel, self).__init__()
         self.linear = torch.nn.Linear(1280, 20)
-        self.activation = torch.nn.Sigmoid() if classifier else torch.nn.Softmax(dim=1)
+        self.activation = torch.nn.Sigmoid() if classifier else torch.nn.LogSoftmax(dim=1)
 
     def forward(self, x):
         out = self.linear(x)
@@ -142,7 +142,7 @@ def main():
 
     model = LinearModel(classifier=classifier)
 
-    loss_fn = torch.nn.BCELoss() if classifier else torch.nn.MSELoss()
+    loss_fn = torch.nn.BCELoss() if classifier else torch.nn.KLDivLoss(reduction="batchmean")
     optimiser = torch.optim.SGD(model.parameters(), lr=1e-3)
 
     size = len(train_loader.dataset)
