@@ -7,6 +7,18 @@ import argparse
 import torch
 import proteinnetpy
 
+class LinearModel(torch.nn.Module):
+    """Simple linear top layer"""
+    def __init__(self, classifier=False):
+        super(LinearModel, self).__init__()
+        self.linear = torch.nn.Linear(1280, 20)
+        self.activation = torch.nn.Sigmoid() if classifier else torch.nn.Softmax(dim=1)
+
+    def forward(self, x):
+        out = self.linear(x)
+        out = self.activation(out)
+        return out
+
 def main():
     """
     Run ESM1b on input Fasta and format into a single output file
