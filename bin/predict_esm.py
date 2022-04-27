@@ -15,7 +15,7 @@ def main():
     use_gpu = torch.cuda.is_available() and not args.no_gpu
 
     # Load top model
-    top_model = torch.load()
+    top_model = torch.load(args.model)
 
     # Load ESM1b
     esm_model, alphabet = torch.hub.load("facebookresearch/esm:main", "esm1b_t33_650M_UR50S")
