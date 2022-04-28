@@ -55,6 +55,10 @@ def main():
 
         # Make predictions
         for record in data:
+            if len(record) > 1022:
+                # Maximum size expected by ESM-1v
+                continue
+
             if args.input_type == "proteinnet":
                 rec_id = record.id
                 seq = "".join(record.primary)
