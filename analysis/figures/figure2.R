@@ -46,7 +46,7 @@ p_pred_diff <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
 
 ### Panel - Correlation with true values ###
 pssm_models <- read_tsv("data/pssm/combined_preds.tsv") %>%
-  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "Baseline CNN", "UNET", "PreGraph UNET")))
+  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "ESM-1b", "Baseline CNN", "UNET", "PreGraph UNET")))
 
 pssm_cor <- group_by(pssm_models, model) %>%
   group_modify(~broom::tidy(cor.test(.$pred, .$true)))
@@ -64,7 +64,7 @@ p_pssm_cor <- ggplot(pssm_cor, aes(x = model, y = estimate, fill = model, ymin =
 ### Panel - Proportion best ###
 pssm_summary <- drop_na(pssm_models) %>%
   mutate(abs_diff = abs(diff)) %>%
-  group_by(pdb_id, chain, position, wt, mut) %>%
+  group_by(protein, position, wt, mut) %>%
   mutate(best_diff = min(abs_diff)) %>%
   ungroup() %>%
   mutate(good_model = abs_diff < 2,

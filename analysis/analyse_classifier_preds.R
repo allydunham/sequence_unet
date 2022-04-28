@@ -22,6 +22,10 @@ sift <- map(dir("data/freq/sift_test", full.names = TRUE), read_sift) %>%
   pivot_longer(c(-protein, -position), names_to = "mut", values_to = "SIFT4G") %>%
   filter(mut %in% Biostrings::AA_STANDARD)
 
+esm1b <- read_tsv('data/esm/freq_preds.tsv') %>%
+  select(protein=id, position, wt, starts_with("pred")) %>%
+  pivot_longer(starts_with("pred"), names_to = "mut", names_prefix = "pred_", values_to = "ESM-1b")
+
 models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
   select(protein, position, wt, A:Y) %>%
   pivot_longer(A:Y, names_to = "mut", values_to = "freq") %>%
@@ -32,13 +36,14 @@ models <- read_tsv('data/pssm/pn_casp12_testing.tsv') %>%
             by = c("protein", "position", "wt", "mut")) %>%
   left_join(select(read_tsv('data/freq/baseline_testing.tsv'), protein = pdb_id, position, wt, mut, `Baseline CNN`=pred),
             by = c("protein", "position", "wt", "mut")) %>%
+  left_join(esm1b, by = c("protein", "position", "wt", "mut")) %>%
   left_join(blosum, by = c("wt", "mut")) %>%
   left_join(sift, by = c("protein", "position", "mut")) %>%
   pivot_longer(c(UNET:SIFT4G), names_to = "model", values_to = "pred")
 write_tsv(models, "data/freq/all_model_testing.tsv")
 
 ### Analyse ###
-greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, BLOSUM62 = FALSE, `Baseline CNN` = TRUE)
+greater <- c(UNET = TRUE, `PreGraph UNET` = TRUE, SIFT4G = FALSE, `ESM-1b`=TRUE, BLOSUM62 = FALSE, `Baseline CNN` = TRUE)
 roc <- group_by(models, model) %>%
   group_modify(~calc_roc(., deleterious, pred, greater = greater[.y$model], max_steps = 6000)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))

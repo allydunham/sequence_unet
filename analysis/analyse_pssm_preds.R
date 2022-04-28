@@ -12,32 +12,47 @@ aa_freqs <- c('A'=8.25, 'Q'=3.93, 'L'=9.65, 'S'=6.63, 'R'=5.53, 'E'=6.72, 'K'=5.
               'N'=4.05, 'G'=7.08, 'M'=2.41, 'W'=1.09, 'D'=5.46, 'H'=2.27, 'F'=3.86, 'Y'=2.92,
               'C'=1.38, 'I'=5.91, 'P'=4.73, 'V'=6.86) / 100
 
-model_files <- c(ProteinNet='data/pssm/pn_casp12_validation.tsv',
-                 SPBuild='data/pssm/spbuild_casp12_validation.tsv',
-                 UNET='data/pssm/unet_sequence_validation.tsv',
-                 `PreGraph UNET`='data/pssm/unet_structure_validation.tsv',
-                 `Baseline CNN`='data/pssm/baseline_validation.tsv')
+model_files <- c(ProteinNet='data/pssm/pn_casp12_testing.tsv',
+                 SPBuild='data/pssm/spbuild_casp12_testing.tsv',
+                 UNET='data/pssm/unet_sequence_testing.tsv',
+                 `PreGraph UNET`='data/pssm/unet_structure_testing.tsv',
+                 `Baseline CNN`='data/pssm/baseline_testing.tsv',
+                 `ESM-1b`='data/esm/pssm_preds.tsv')
 
 # Convert output into the standard  log(O) / Log(E) format
 models <- map(model_files, read_tsv)
 
-models$ProteinNet <- extract(models$ProteinNet, protein, into = c("pdb_id", "chain"), regex = "[0-9]*#([0-9A-Z]*)_[0-9]*_([A-Za-z0-9])") %>%
-  pivot_longer(A:Y, names_to = "mut", values_to = "pred") %>%
+models$ProteinNet <- pivot_longer(models$ProteinNet, A:Y, names_to = "mut", values_to = "pred") %>%
   mutate(pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>%
   drop_na()
 
-models$SPBuild <- extract(models$SPBuild, protein, into = c("pdb_id", "chain"), regex = "[0-9]*#([0-9A-Z]*)_[0-9]*_([A-Za-z0-9])") %>%
-  pivot_longer(A:V, names_to = "mut", values_to = "pred") %>%
+models$SPBuild <- pivot_longer(models$SPBuild, A:V, names_to = "mut", values_to = "pred") %>%
   drop_na()
 
-models$UNET <- mutate(models$UNET, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
-models$`PreGraph UNET` <- mutate(models$`PreGraph UNET`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
-models$`Baseline CNN` <- mutate(models$`Baseline CNN`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% drop_na()
+models$`ESM-1b` <- select(models$`ESM-1b`, protein=id, position, wt, starts_with("pred")) %>%
+  pivot_longer(starts_with("pred"), names_prefix = "pred_", names_to = "mut", values_to = "pred") %>%
+  mutate(pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>%
+  drop_na()
+
+models$UNET <- mutate(models$UNET, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% 
+  select(-chain) %>% 
+  rename(protein = pdb_id) %>% 
+  drop_na()
+
+models$`PreGraph UNET` <- mutate(models$`PreGraph UNET`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% 
+  select(-chain) %>% 
+  rename(protein = pdb_id) %>% 
+  drop_na()
+
+models$`Baseline CNN` <- mutate(models$`Baseline CNN`, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% 
+  select(-chain) %>% 
+  rename(protein = pdb_id) %>% 
+  drop_na()
 
 models <- bind_rows(models, .id = 'model') %>%
   pivot_wider(names_from = 'model', values_from = 'pred') %>%
   left_join(blosum, by = c('wt', 'mut')) %>%
-  pivot_longer(c(SPBuild, UNET, BLOSUM62, `PreGraph UNET`, `Baseline CNN`), names_to = 'model', values_to = 'pred') %>%
+  pivot_longer(c(SPBuild, UNET, BLOSUM62, `PreGraph UNET`, `Baseline CNN`, `ESM-1b`), names_to = 'model', values_to = 'pred') %>%
   rename(true = ProteinNet) %>%
   mutate(diff = pred - true)
 write_tsv(models, "data/pssm/combined_preds.tsv")

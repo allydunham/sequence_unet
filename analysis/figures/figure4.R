@@ -10,7 +10,7 @@ model_colours <- c(
   `Baseline ClinVar` = "#33a02c", `Baseline Frequency` = "#33a02c", 
   `ClinPred` = "#989898", `REVEL` = "#989898", `MVP` = "#989898", `VEST4` = "#989898", `M-CAP` = "#989898",
   `DEOGEN2` = "#989898", `CADD` = "#989898", `EVE` = "#e6ab02", `FATHMM-XF` = "#989898", `PolyPhen2` = "#989898",
-  `PROVEAN` = "#989898", `MutationAssessor` = "#989898", `MutPred` = "#989898", `FATHMM` = "#989898",
+  `PROVEAN` = "#989898", `MutationAssessor` = "#989898", `MutPred` = "#989898", `FATHMM` = "#989898", `ESM-1v`="#e6ab02",
   `SIFT4G` = "#e6ab02", `PrimateAI` = "#989898", `LIST S2` = "#989898", `MPC` = "#989898", `FATHMM-MKL` = "#989898",
   `FoldX` = "#e6ab02", `DANN` = "#989898", `GenoCanyon` = "#989898", `GERP++` = "#989898", `BLOSUM62` = "#989898"
 )
@@ -40,7 +40,7 @@ clinvar_auc <- distinct(clinvar_roc, model, auc, pr_auc) %>%
 p_clinvar <- ggplot(clinvar_auc, aes(x = model, y = auc, fill = model)) +
   geom_col(show.legend = FALSE, width = 0.5) +
   scale_fill_manual(values = model_colours) +
-  scale_y_continuous(expand = expansion(0), limits = c(0, 1)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)), limits = c(0, 1)) +
   coord_flip() +
   labs(x = "", y = "ClinVar AUC") +
   theme(panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),

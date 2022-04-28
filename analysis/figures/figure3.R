@@ -56,8 +56,8 @@ p_train_threshold <- filter(training_logs, experiment == "threshold", metric == 
 
 ### Panel - Overall performance ###
 classifier_performance <- read_tsv("data/freq/all_model_testing.tsv") %>%
-  mutate(threshold = c(`UNET`=0.5, `PreGraph UNET`=0.5, `Baseline CNN`=0.5, `BLOSUM62`=-2, `SIFT4G`=0.05)[model],
-         pred_del = ifelse(model %in% c("SIFT4G"), pred < threshold, pred > threshold)) %>%
+  mutate(threshold = c(`UNET`=0.5, `PreGraph UNET`=0.5, `Baseline CNN`=0.5, `ESM-1b`=0.5, `BLOSUM62`=-2, `SIFT4G`=0.05)[model],
+         pred_del = ifelse(model %in% c("SIFT4G", "BLOSUM62"), pred < threshold, pred > threshold)) %>%
   group_by(model, protein) %>%
   summarise(tp = sum(pred_del & deleterious),
             tn = sum(!pred_del & !deleterious),
@@ -71,7 +71,7 @@ classifier_performance <- read_tsv("data/freq/all_model_testing.tsv") %>%
          kappa =  2 * (tp * tn - fn * fp) / ((tp + fp) * (fp + tn) + (tp + fn) * (fn + tn))) %>%
   select(model, protein, accuracy, recall, precision, f1, kappa) %>%
   pivot_longer(c(-model, -protein), names_to = "metric", values_to = "value") %>%
-  mutate(model = factor(model, levels = c("BLOSUM62", "SIFT4G", "Baseline CNN", "UNET", "PreGraph UNET")),
+  mutate(model = factor(model, levels = c("BLOSUM62", "SIFT4G", "ESM-1b", "Baseline CNN", "UNET", "PreGraph UNET")),
          metric = factor(metric, levels = c("accuracy", "precision", "recall", "f1", "kappa")))
 
 metric_labs <- c(accuracy="Accuracy", recall="Recall", precision="Precision", f1="F1 Score", kappa="Cohen's &kappa;")
@@ -98,11 +98,11 @@ classifier_roc <- read_tsv("data/freq/roc.tsv") %>%
 
 classifier_auc <- distinct(classifier_roc, model, model_auc, auc) %>%
   arrange(desc(auc)) %>%
-  mutate(fpr = 1, tpr = c(0.23, 0.18, 0.13, 0.08, 0.03),
+  mutate(fpr = 1, tpr = c(0.28, 0.23, 0.18, 0.13, 0.08, 0.03),
          col = TOOL_COLOURS[model])
 
-thresholds <- tibble(model=c("UNET", "PreGraph UNET", "Baseline CNN", "BLOSUM62", "SIFT4G"),
-                     threshold=c(0.5, 0.5, 0.5, -2, 0.05)) %>%
+thresholds <- tibble(model=c("UNET", "PreGraph UNET", "Baseline CNN", "ESM-1b", "BLOSUM62", "SIFT4G"),
+                     threshold=c(0.5, 0.5, 0.5, 0.5, -2, 0.05)) %>%
   left_join(classifier_roc, by = "model") %>%
   mutate(thresh_diff = abs(threshold - thresh)) %>%
   group_by(model) %>%
@@ -120,7 +120,7 @@ p_roc <- ggplot(classifier_roc, aes(x = fpr, y = tpr, colour = model)) +
 ### Panel - PR Curve ###
 classifier_pr_auc <- distinct(classifier_roc, model, model_pr_auc, pr_auc) %>%
   arrange(desc(pr_auc)) %>%
-  mutate(tpr = 1, precision = c(1, 0.95, 0.9, 0.85, 0.8),
+  mutate(tpr = 1, precision = c(1, 0.95, 0.9, 0.85, 0.8, 0.75),
          col = TOOL_COLOURS[model])
 
 pr_pseudo <- tibble(model = c("SIFT4G", "SIFT4G", "BLOSUM62", "BLOSUM62"),
