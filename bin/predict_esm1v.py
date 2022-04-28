@@ -4,9 +4,12 @@ Make predictions from ESM1b top models
 """
 import sys
 import argparse
+from typing import Type
 import torch
 import gc
 import proteinnetpy
+
+from Bio import SeqIO
 
 def load_esm1v_model(n=1, use_gpu=True):
     """
@@ -22,7 +25,6 @@ def load_esm1v_model(n=1, use_gpu=True):
 
     return esm_model, alphabet, batch_converter
 
-
 def main():
     """
     Run ESM1b on input Fasta and format into a single output file
@@ -35,19 +37,35 @@ def main():
     for model_num in args.models:
         # Load ESM1b
         model, alphabet, batch_converter = load_esm1v_model(model_num, use_gpu=use_gpu)
-
-        # Load ProteinNet
-        print(f"Initialising ProtienNet dataset: {args.proteinnet}", file=sys.stderr)
-        filter_func = proteinnetpy.data.make_length_filter(max_length=1022)
-        proteinnet = proteinnetpy.data.ProteinNetDataset(path=args.proteinnet,
-                                                         filter_func=filter_func,
-                                                         preload=False)
-
         mut_idxs = [alphabet.get_idx(i) for i in proteinnetpy.record.AMINO_ACIDS]
 
+        # Load Data
+        if args.input_type == "proteinnet":
+            print(f"Initialising ProtienNet dataset: {args.input}", file=sys.stderr)
+            filter_func = proteinnetpy.data.make_length_filter(max_length=1022)
+            data = proteinnetpy.data.ProteinNetDataset(path=args.input,
+                                                       filter_func=filter_func,
+                                                       preload=False)
+        elif args.input_type == "fasta":
+            data = SeqIO.parse(args.input, "fasta")
+        else:
+            # Should be caught by argparse before here
+            raise ValueError("Unrecognised input file type")
+
+
         # Make predictions
-        for record in proteinnet:
-            esm_input = [(record.id, "".join(record.primary))]
+        for record in data:
+            if args.input_type == "proteinnet":
+                rec_id = record.id
+                seq = "".join(record.primary)
+            elif args.input_type == "fasta":
+                rec_id = record.id
+                seq = str(record.seq)
+            else:
+                # Should be caught by argparse before here
+                raise ValueError("Unrecognised input file type")
+
+            esm_input = [(rec_id, seq)]
             _, _, batch_tokens = batch_converter(esm_input)
 
             if use_gpu:
@@ -58,10 +76,10 @@ def main():
             results = results.cpu().numpy()
 
             for p in range(len(record)):
-                wt_idx = alphabet.get_idx(record.primary[p])
+                wt_idx = alphabet.get_idx(seq[p])
                 mut_scores = results[p + 1, mut_idxs] - results[p + 1, wt_idx]
 
-                print(model_num, record.id, p + 1, record.primary[p], *mut_scores,
+                print(model_num, rec_id, p + 1, seq[p], *mut_scores,
                       sep="\t", file=sys.stdout)
 
         # Wipe model from GPU to clear space for next model
@@ -76,7 +94,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('proteinnet', metavar='P', type=str, help="Input ProteinNet data")
+    parser.add_argument('input', metavar='I', type=str, help="Input file")
+
+    parser.add_argument('--input_type', '-i', default="fasta", choices=["proteinnet", "fasta"],
+                        help="Input file type")
 
     parser.add_argument('--models',  '-m', nargs="+", default=[1], choices=[1, 2, 3, 4, 5],
                         type=int, help="ESM-1v model number(s)")
