@@ -20,7 +20,7 @@ def load_esm1v_model(n=1, use_gpu=True):
         esm_model = esm_model.cuda()
         print("Transferred ESM1b to GPU", file=sys.stderr)
 
-    return esm_model, batch_converter
+    return esm_model, alphabet, batch_converter
 
 
 def main():
@@ -34,14 +34,16 @@ def main():
           sep="\t", file=sys.stdout)
     for model_num in args.models:
         # Load ESM1b
-        model, batch_converter = load_esm1v_model(model_num, use_gpu=use_gpu)
+        model, alphabet, batch_converter = load_esm1v_model(model_num, use_gpu=use_gpu)
 
         # Load ProteinNet
         print(f"Initialising ProtienNet dataset: {args.proteinnet}", file=sys.stderr)
         filter_func = proteinnetpy.data.make_length_filter(max_length=1022)
         proteinnet = proteinnetpy.data.ProteinNetDataset(path=args.proteinnet,
-                                                        filter_func=filter_func,
-                                                        preload=False)
+                                                         filter_func=filter_func,
+                                                         preload=False)
+
+        mut_idxs = [alphabet.get_idx(i) for i in proteinnetpy.record.AMINO_ACIDS]
 
         # Make predictions
         for record in proteinnet:
@@ -52,8 +54,15 @@ def main():
                 batch_tokens = batch_tokens.to(device="cuda", non_blocking=True)
 
             with torch.no_grad():
-                results = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)
-            reps = results["representations"][33].to(device="cpu")
+                results = torch.log_softmax(model(batch_tokens)["logits"], dim=-1)[0]
+            results = results.cpu().numpy()
+
+            for p in range(len(record)):
+                wt_idx = alphabet.get_idx(record.primary[p])
+                mut_scores = results[p + 1, mut_idxs] - results[p + 1, wt_idx]
+
+                print(model_num, record.id, p + 1, record.primary[p], *mut_scores,
+                      sep="\t", file=sys.stdout)
 
         # Wipe model from GPU to clear space for next model
         model = model.cpu()
