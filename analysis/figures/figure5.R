@@ -5,8 +5,8 @@ source('src/config.R')
 phyl <- phylogram::read.dendrogram("data/abundance/muller_species.phy")
 phyl_data <- ggdendro::dendro_data(phyl, type = "rectangle")
 
-species <- readxl::read_xlsx("data/abundance/muller_species.xlsx", sheet = 2) %>%
-  mutate(taxid = factor(as.character(taxid), levels = phyl_data$labels$label)) %>%
+species <- readxl::read_xlsx("data/abundance/muller_species.xlsx", sheet = 2, col_types = "text") %>%
+  mutate(taxid = factor(as.character(taxid), levels = str_remove_all(phyl_data$labels$label, "'"))) %>%
   arrange(taxid) %>%
   drop_na(taxid)
 
