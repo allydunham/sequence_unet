@@ -65,8 +65,8 @@ class ESM1bData(torch.utils.data.IterableDataset):
             reps = results["representations"][33].to(device="cpu")
 
             for p in range(len(record)):
-                x = reps.numpy()[0,p,:]
-                y = record.evolutionary[:,p]
+                x = reps.numpy()[0, 1 + p, :]
+                y = record.evolutionary[:, p]
 
                 if self.thresh is not None:
                     y = (y < self.thresh).astype(float)

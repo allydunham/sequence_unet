@@ -18,7 +18,7 @@ class LinearModel(torch.nn.Module):
         out = self.linear(x)
         out = self.activation(out)
         return out
-        
+
 def main():
     """
     Run ESM1b on input Fasta and format into a single output file
@@ -65,7 +65,7 @@ def main():
 
         for p in range(len(record)):
             with torch.no_grad():
-                preds = top_model(reps[:,p,:]).numpy()[0,:]
+                preds = top_model(reps[:, 1 + p, :]).numpy()[0, :]
             true = record.evolutionary[:,p]
 
             print(record.id, p + 1, record.primary[p], *true, *preds, sep="\t", file=sys.stdout)
