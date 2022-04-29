@@ -21,7 +21,6 @@ import sys
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
-from Bio import Alphabet
 from tensorflow.keras.models import load_model
 
 from pn_maps import SequenceUNETMapFunction, ClinVarMapFunction, one_hot_sequence, AMINO_ACIDS
@@ -39,7 +38,7 @@ def predict_fasta(model, fasta, layers, tsv=None, wide=False):
     if tsv is not None:
         tsv = tsv[ind_cols]
 
-    for seq in SeqIO.parse(fasta, format="fasta", alphabet=Alphabet.IUPAC.IUPACProtein()):
+    for seq in SeqIO.parse(fasta, format="fasta"):
         try:
             one_hot = one_hot_sequence(seq)
         except KeyError as err:
@@ -59,7 +58,7 @@ def predict_fasta(model, fasta, layers, tsv=None, wide=False):
         df['position'] = df['position'] + 1
         df = df[df.index < len(seq.seq)] # Remove padded records
         df['gene'] = seq.id
-        df['wt'] = seq.seq
+        df['wt'] = list(seq.seq)
 
         if not wide:
             df = df.melt(id_vars=["gene", "position", "wt"], var_name="mut", value_name="pred")
