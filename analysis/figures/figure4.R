@@ -4,10 +4,11 @@ source('src/config.R')
 source("src/analysis.R")
 
 model_colours <- c(
-  `UNET (Top)` = "#1f78b4", `PreGraph UNET (Top)` = "#a6cee3",
-  `UNET (Finetune)` = "#e31a1c", `PreGraph UNET (Finetune)` = "#fb9a99",
-  `UNET` = "#6a3d9a", `PreGraph UNET` = "#cab2d6",
-  `Baseline ClinVar` = "#33a02c", `Baseline Frequency` = "#33a02c", 
+  `UNET (Top)` = "#1f78b4", `UNET (Finetune)` = "#e31a1c", `UNET` = "#6a3d9a",
+  `UNET (Top)*` = "#1f78b4", `PreGraph UNET (Top)*` = "#a6cee3",
+  `UNET (Finetune)*` = "#e31a1c", `PreGraph UNET (Finetune)*` = "#fb9a99",
+  `UNET*` = "#6a3d9a", `PreGraph UNET*` = "#cab2d6",
+  `Baseline ClinVar*` = "#33a02c", `Baseline Frequency*` = "#33a02c", 
   `ClinPred` = "#989898", `REVEL` = "#989898", `MVP` = "#989898", `VEST4` = "#989898", `M-CAP` = "#989898",
   `DEOGEN2` = "#989898", `CADD` = "#989898", `EVE` = "#e6ab02", `FATHMM-XF` = "#989898", `PolyPhen2` = "#989898",
   `PROVEAN` = "#989898", `MutationAssessor` = "#989898", `MutPred` = "#989898", `FATHMM` = "#989898", `ESM-1v`="#e6ab02",

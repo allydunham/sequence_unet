@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# dbNDSFP and EVE tool clinar roc
+# dbNDSFP, ESM-1v and EVE tool clinar roc
 source('src/config.R')
 source("src/analysis.R")
 data("BLOSUM62", package = "Biostrings")
@@ -10,7 +10,7 @@ blosum <- as_tibble(BLOSUM62, rownames = 'wt') %>%
   pivot_longer(-wt, names_to = 'mut', values_to = 'BLOSUM62')
 
 clinvar_stats <- read_tsv("data/clinvar/clinvar_test.tsv") %>% 
-  select(uniprot, pdb_id, chain, pdb_pos, position, wt, mut, clnsig, clnsig_patho, FoldX = foldx_ddg, SIFT4G = sift_score) %>%
+  select(uniprot, position, wt, mut, clnsig, clnsig_patho, FoldX = foldx_ddg, SIFT4G = sift_score) %>%
   left_join(blosum, by = c("wt", "mut"))
 
 # Load EVE results
@@ -42,11 +42,12 @@ eve_scores <- unique(uniprot_mapping$uniprot_name) %>%
 
 # Import ESM-1v results
 esm_scores <- read_tsv("data/esm/1v_clinvar_preds.tsv") %>%
+  extract(id, "uniprot", "[a-z]*\\|([A-Z0-9]*)\\|.*") %>%
+  semi_join(clinvar_stats, by = c("uniprot", "position", "wt")) %>%
   pivot_longer(starts_with("pred_"), names_to = "mut", names_prefix = "pred_", values_to = "s") %>%
   pivot_wider(names_from = "model", values_from = "s") %>%
   mutate(`ESM-1v` = rowMeans(across(c(`1`, `2`, `3`, `4`, `5`)))) %>%
-  select(id, position, wt, mut, `ESM-1v`) %>%
-  separate(id, c("pdb_id", "pdb_model", "chain"))
+  select(uniprot, position, wt, mut, `ESM-1v`)
 
 # Generate dbNSFP query
 ensembl_cannonical <- read_tsv("data/clinvar/human_grch38_105_ensembl_cannonical.tsv") %>%
@@ -108,11 +109,11 @@ dbnsfp <- read_tsv("data/clinvar/dbnsfp_clinvar.tsv", na = c("NA", "na", ".", "-
 # Combine data
 preds <- left_join(clinvar_stats, select(eve_scores, uniprot, position, wt, mut, EVE), by = c("uniprot", "position", "wt", "mut")) %>%
   left_join(select(dbnsfp, uniprot, position, wt, mut, PolyPhen2:`GERP++`), by = c("uniprot", "position", "wt", "mut")) %>%
-  left_join(mutate(select(esm_scores, -pdb_model), pdb_id = str_to_lower(pdb_id)), by = c("pdb_id", "chain", "pdb_pos"="position", "wt", "mut"))
+  left_join(esm_scores, by = c("uniprot", "position", "wt", "mut"))
 
 # Calculate ROC
 less = c("SIFT4G", "BLOSUM62", "FATHMM", "PROVEAN", "ESM-1v")
-roc <- pivot_longer(preds, c(-pdb_id, -chain, -pdb_pos, -uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho),
+roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho),
                     names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
   group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less), max_steps = 5000)) %>%

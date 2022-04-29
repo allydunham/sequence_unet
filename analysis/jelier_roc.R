@@ -10,6 +10,14 @@ import_jelier <- function() {
     left_join(read_tsv("data/jelier/preds/sift_foldx.tsv"), by = c("gene", "position", "wt", "mut")) %>%
     rename(SIFT4G = sift_score, FoldX = foldx)
   
+  esm <- read_tsv("data/esm/1v_jelier_preds.tsv") %>%
+    rename(gene = id) %>%
+    semi_join(base, by = c("gene", "position", "wt")) %>%
+    pivot_longer(starts_with("pred_"), names_to = "mut", names_prefix = "pred_", values_to = "s") %>%
+    pivot_wider(names_from = "model", values_from = "s") %>%
+    mutate(`ESM-1v` = rowMeans(across(c(`1`, `2`, `3`, `4`, `5`)))) %>%
+    select(gene, position, wt, mut, `ESM-1v`)
+    
   bind_rows(
     `Baseline ClinVar` = read_tsv("data/jelier/preds/baseline_clinvar.tsv"),
     `Baseline Frequency` = read_tsv("data/jelier/preds/baseline_freq.tsv"),
@@ -20,14 +28,15 @@ import_jelier <- function() {
   ) %>%
     distinct(model, gene, position, wt, mut, .keep_all = TRUE) %>%
     pivot_wider(names_from = model, values_from = pred) %>% 
-    left_join(base, ., by = c("gene", "position", "wt", "mut"))
+    left_join(base, ., by = c("gene", "position", "wt", "mut")) %>%
+    left_join(esm, by = c("gene", "position", "wt", "mut"))
 }
 
 jelier_preds <- import_jelier()
 
 jelier_roc <- pivot_longer(jelier_preds, c(-gene, -position, -wt, -mut, -effect, -class), names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
-  group_modify(~calc_roc(.x, class, pred, greater = !(.y == "SIFT4G"), max_steps = 6000)) %>%
+  group_modify(~calc_roc(.x, class, pred, greater = !(.y %in% c("SIFT4G", "ESM-1v")), max_steps = 6000)) %>%
   ungroup() %>%
   arrange(desc(auc)) %>%
   mutate(model_auc = auc_labeled_model(model, auc))

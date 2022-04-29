@@ -48,6 +48,13 @@ eve_scores <- unique(uniprot_mapping$uniprot_name) %>%
   bind_rows() %>%
   drop_na()
 
+# Import ESM-1v results
+esm_scores <- read_tsv("data/esm/1v_dms_preds.tsv") %>%
+  pivot_longer(starts_with("pred_"), names_to = "mut", names_prefix = "pred_", values_to = "s") %>%
+  pivot_wider(names_from = "model", values_from = "s") %>%
+  mutate(`ESM-1v` = rowMeans(across(c(`1`, `2`, `3`, `4`, `5`)))) %>%
+  select(gene=id, position, wt, mut, `ESM-1v`)
+
 # Generate Query for dbNPFS (for applicable human proteins)
 # Uses list of cannonical transcripts available from Ensembl
 ensembl_cannonical <- read_tsv("data/clinvar/human_grch38_105_ensembl_cannonical.tsv") %>%
@@ -109,11 +116,12 @@ dbnsfp <- read_tsv("data/dms/dbnsfp_results.tsv", na = c("NA", "na", ".", "-")) 
 # Combine data 
 preds <- mutate(dms, gene = str_to_lower(gene)) %>%
   left_join(unet, by = c("gene", "position", "wt", "mut")) %>%
+  left_join(esm_scores, by = c("gene", "position", "wt", "mut")) %>%
   left_join(select(eve_scores, uniprot, position, wt, mut, EVE), by = c("uniprot", "position", "wt", "mut")) %>%
   left_join(select(dbnsfp, uniprot, position, wt, mut, PolyPhen2:`GERP++`), by = c("uniprot", "position", "wt", "mut"))
 
 # Calculate correlation
-less = c("SIFT4G", "BLOSUM62", "FATHMM", "PROVEAN")
+less = c("SIFT4G", "BLOSUM62", "FATHMM", "PROVEAN", "ESM-1v")
 correlations <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_to = "pred") %>%
   drop_na() %>%
   mutate(pred = ifelse(tool %in% less, pred, -pred)) %>% # Change preds so lower score means more deleterious like score
@@ -123,7 +131,6 @@ correlations <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_t
   mutate(stderr_pearson = sd_pearson/sqrt(studies), stderr_spearman = sd_spearman/sqrt(studies))
 write_tsv(correlations, "data/dms/correlation.tsv")
 
-# Move ROC calculation here and make Jelier own script?
 roc <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_to = "pred") %>%
   mutate(class = score < -0.5) %>%
   group_by(tool) %>%
