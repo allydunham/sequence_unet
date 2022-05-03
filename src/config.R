@@ -33,7 +33,9 @@ TOOL_COLOURS <- c(`PreGraph UNET`="#cab2d6",
                   SIFT4G="#e6ab02",
                   SPBuild="#e78ac3",
                   `FoldX`="#66c2a5",
-                  `ESM-1b`="#377eb8")
+                  `ESM-1b`="#377eb8",
+                  `ESM-1b Logits`="#91ceff",
+                  `ESM-1b Top Model`="#377eb8")
 
 KINGDOM_COLOURS <- c(Eukaryote = "#984ea3", Archea = "#e41a1c", Bacteria = "#4daf4a")
 

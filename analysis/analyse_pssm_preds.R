@@ -17,7 +17,8 @@ model_files <- c(ProteinNet='data/pssm/pn_casp12_testing.tsv',
                  UNET='data/pssm/unet_sequence_testing.tsv',
                  `PreGraph UNET`='data/pssm/unet_structure_testing.tsv',
                  `Baseline CNN`='data/pssm/baseline_testing.tsv',
-                 `ESM-1b`='data/esm/pssm_preds.tsv')
+                 `ESM-1b Logits`='data/esm/testing_logit_preds.tsv',
+                 `ESM-1b Top Model`='data/esm/pssm_preds_10_epoch.tsv')
 
 # Convert output into the standard  log(O) / Log(E) format
 models <- map(model_files, read_tsv)
@@ -29,9 +30,15 @@ models$ProteinNet <- pivot_longer(models$ProteinNet, A:Y, names_to = "mut", valu
 models$SPBuild <- pivot_longer(models$SPBuild, A:V, names_to = "mut", values_to = "pred") %>%
   drop_na()
 
-models$`ESM-1b` <- select(models$`ESM-1b`, protein=id, position, wt, starts_with("pred")) %>%
+models$`ESM-1b Logits` <- filter(models$`ESM-1b Logits`, model == "esm1b") %>%
+  select(protein=id, position, wt, starts_with("pred")) %>%
   pivot_longer(starts_with("pred"), names_prefix = "pred_", names_to = "mut", values_to = "pred") %>%
-  mutate(pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>%
+  mutate(pred = as.integer(log2((exp(pred) + 0.00001) / aa_freqs[mut]))) %>%
+  drop_na()
+
+models$`ESM-1b Top Model` <- select(models$`ESM-1b Top Model`, protein=id, position, wt, starts_with("pred")) %>%
+  pivot_longer(starts_with("pred"), names_prefix = "pred_", names_to = "mut", values_to = "pred") %>%
+  mutate(pred = as.integer(log2((exp(pred) + 0.00001) / aa_freqs[mut]))) %>%
   drop_na()
 
 models$UNET <- mutate(models$UNET, pred = as.integer(log2((pred + 0.00001) / aa_freqs[mut]))) %>% 
@@ -52,7 +59,8 @@ models$`Baseline CNN` <- mutate(models$`Baseline CNN`, pred = as.integer(log2((p
 models <- bind_rows(models, .id = 'model') %>%
   pivot_wider(names_from = 'model', values_from = 'pred') %>%
   left_join(blosum, by = c('wt', 'mut')) %>%
-  pivot_longer(c(SPBuild, UNET, BLOSUM62, `PreGraph UNET`, `Baseline CNN`, `ESM-1b`), names_to = 'model', values_to = 'pred') %>%
+  pivot_longer(c(SPBuild, UNET, BLOSUM62, `PreGraph UNET`, `Baseline CNN`, `ESM-1b Logits`, `ESM-1b Top Model`),
+               names_to = 'model', values_to = 'pred') %>%
   rename(true = ProteinNet) %>%
   mutate(diff = pred - true)
 write_tsv(models, "data/pssm/combined_preds.tsv")
@@ -90,7 +98,7 @@ plots$scatter <- (count(models, model, true, pred) %>%
 
 model_summary <- drop_na(models) %>%
   mutate(abs_diff = abs(diff)) %>%
-  group_by(pdb_id, chain, position, wt, mut) %>%
+  group_by(protein, position, wt, mut) %>%
   mutate(best_diff = min(abs_diff)) %>%
   ungroup() %>%
   mutate(good_model = abs_diff < 2,
@@ -113,7 +121,7 @@ plots$closest <- mutate(model_summary, type = factor(type, levels = c('good', 'b
   theme(axis.text.x = element_markdown(),
         axis.ticks.x = element_blank())
 
-plots$combined <- ggarrange(plots$closest + guides(fill = FALSE), plots$scatter,
+plots$combined <- ggarrange(plots$closest + guides(fill = "none"), plots$scatter,
                             ncol = 1, nrow = 2, common.legend = TRUE, labels = 'AUTO', heights = c(1, 2)) %>%
   labeled_plot(height = 20, width = 30, units = 'cm')
 

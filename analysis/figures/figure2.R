@@ -46,7 +46,7 @@ p_pred_diff <- ggplot(pssm_preds, aes(x = position, fill = diff)) +
 
 ### Panel - Correlation with true values ###
 pssm_models <- read_tsv("data/pssm/combined_preds.tsv") %>%
-  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "ESM-1b", "Baseline CNN", "UNET", "PreGraph UNET")))
+  mutate(model = factor(model, levels = c("BLOSUM62", "SPBuild", "ESM-1b Logits", "ESM-1b Top Model", "Baseline CNN", "UNET", "PreGraph UNET")))
 
 pssm_cor <- group_by(pssm_models, model) %>%
   group_modify(~broom::tidy(cor.test(.$pred, .$true)))
