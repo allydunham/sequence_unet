@@ -9,7 +9,7 @@ setup(name='sequence_unet',
       license='Apache 2.0',
       packages=find_packages(include="sequence_unet"),
 	  include_package_data=False,
-      install_requires=['numpy', 'pandas', 'biopython', 'tensorflow>=2.7',
+      install_requires=['numpy', 'pandas', 'biopython', 'tensorflow>=2.6',
                         'proteinnetpy>=1.0.0', 'tqdm'],
       extras_require={},
       entry_points = {
