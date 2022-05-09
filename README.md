@@ -1,4 +1,4 @@
-# Sequence UNET 0.9.0
+# Sequence UNET 1.0.0
 
 Sequence UNET is a fully convolutional neural network variant effect predictor, able to predict the pathogenicity of protein coding variants and the frequency they occur across large multiple sequence alignments.
 It uses a U-shaped architecture inspired by the U-NET medical image segmentation network [(Ronneberger et al. 201)](http://arxiv.org/abs/1505.04597), with an optional Graph CNN section to incorporate information from protein structure:
