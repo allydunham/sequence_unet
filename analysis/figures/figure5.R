@@ -57,6 +57,11 @@ comp_time <- bind_rows(
   read_tsv("data/abundance/times_gpu.tsv") %>%
     extract(id, "gene", "[a-z]*\\|([A-Z0-9]*)\\|.*") %>%
     mutate(tool = "UNET (GPU)", variants = length * 19),
+  read_tsv("data/abundance/times_gpu_batch.tsv") %>%
+    extract(id, "gene", "[a-z]*\\|([A-Z0-9]*)\\|.*") %>%
+    group_by(batch) %>%
+    summarise(time = sum(time), length = sum(length)) %>%
+    mutate(tool = "Batch UNET (GPU)", variants = length * 19),
   read_tsv("data/esm/time_gpu.tsv") %>%
     rename(gene=id) %>%
     mutate(tool = "ESM-1b (GPU)", variants = length * 19)
@@ -66,8 +71,11 @@ common_time_axis <- dup_axis(name = "", breaks = c(0.01, 1, 60, 60*60, 60*60*24)
                              labels = c("10 Milliseconds", "1 Second", "1 Minute", "1 Hour", "1 Day"))
 
 comp_time_colours <- c(SIFT4G = unname(TOOL_COLOURS["SIFT4G"]), FoldX = unname(TOOL_COLOURS["FoldX"]),
-                       `UNET (CPU)` = "#6a3d9a", `UNET (GPU)` = "#e31a1c",
-                       `ESM-1b (CPU)` = "#f781bf", `ESM-1b (GPU)` = "#377eb8")
+                       `UNET (CPU)` = "#6a3d9a", `UNET (GPU)` = "#e31a1c", `Batch UNET (GPU)` = "#377eb8",
+                       `ESM-1b (CPU)` = "#d95f02", `ESM-1b (GPU)` = "#66a61e")
+
+comp_time_shapes <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.1, `UNET (CPU)` = 0.1, `Batch UNET (GPU)` = 0.1, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.1)
+comp_time_alpha <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.5, `UNET (CPU)` = 0.5, `Batch UNET (GPU)` = 0.5, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.5)
 
 p_comp_time <- ggplot(comp_time, aes(x = variants, y = time, colour = tool, size = tool, alpha = tool)) +
   geom_point(shape = 20) +
@@ -75,8 +83,8 @@ p_comp_time <- ggplot(comp_time, aes(x = variants, y = time, colour = tool, size
                 limits = c(0.01, 1000000), sec.axis = common_time_axis) +
   scale_x_log10(labels = scales::label_comma()) +
   scale_colour_manual(name = "", values = comp_time_colours) +
-  scale_size_manual(values = c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.1, `UNET (CPU)` = 0.1, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.1)) +
-  scale_alpha_manual(values = c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.5, `UNET (CPU)` = 0.5, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.5)) +
+  scale_size_manual(values = comp_time_shapes) +
+  scale_alpha_manual(values = comp_time_alpha) +
   guides(alpha = "none", size = "none", colour = guide_legend(override.aes = list(size = 3))) +
   labs(x = "Variants Computed", y = "Time (s)") +
   theme(axis.ticks.y.right = element_blank(),
@@ -203,8 +211,8 @@ pleg <- {p_correlation_abundance_sd +
   as_ggplot()
 
 figure5 <- multi_panel_figure(width = rep(30, 6), height = c(40, 120, 40, 10), panel_label_type = 'none', row_spacing = 0, column_spacing = 0) %>%
-  fill_panel(p1, row = 1, column = 1:3) %>%
-  fill_panel(p2, row = 1, column = 4:6) %>%
+  fill_panel(p2, row = 1, column = 3:6) %>% # Have p1 over top of p2 to stop axis being cut off
+  fill_panel(p1, row = 1, column = 1:2) %>%
   fill_panel(p3, row = 2, column = 1:6) %>%
   fill_panel(p4, row = 3:4, column = 1:2) %>%
   fill_panel(p5, row = 3, column = 3:4) %>%
