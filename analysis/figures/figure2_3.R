@@ -35,7 +35,7 @@ p_roc <- ggplot(classifier_roc, aes(x = model, y = value, fill = model)) +
   facet_wrap(~metric, labeller = labeller(metric = c(auc="ROC AUC", pr_auc="PR AUC")), strip.position = "bottom") +
   geom_col(width = 0.6, show.legend = FALSE) +
   coord_flip() +
-  scale_fill_manual(name = "", values = TOOL_COLOURS[names(TOOL_COLOURS) %in% model_names$model]) +
+  scale_fill_manual(name = "", values = TOOL_COLOURS[names(TOOL_COLOURS) %in% classifier_roc$model]) +
   theme(strip.placement = "outside",
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
