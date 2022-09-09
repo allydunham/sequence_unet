@@ -106,18 +106,38 @@ dbnsfp <- read_tsv("data/clinvar/dbnsfp_clinvar.tsv", na = c("NA", "na", ".", "-
          across(position:`GERP++`, ~select_cannonical(., cannonical)),
          across(c(position, PolyPhen2:`GERP++`), as.numeric))
 
+# Uniprot to PDB ID
+pdb_mapping <- read_tsv("data/proteinnet/pdb_id_to_uniprot.tsv") %>%
+  rename_with(~str_to_lower(str_replace_all(., " ", "_"))) %>%
+  rename(pdb = from, uniprot = entry)
+
 # Combine data
 preds <- left_join(clinvar_stats, select(eve_scores, uniprot, position, wt, mut, EVE), by = c("uniprot", "position", "wt", "mut")) %>%
   left_join(select(dbnsfp, uniprot, position, wt, mut, PolyPhen2:`GERP++`), by = c("uniprot", "position", "wt", "mut")) %>%
-  left_join(esm_scores, by = c("uniprot", "position", "wt", "mut"))
+  left_join(esm_scores, by = c("uniprot", "position", "wt", "mut")) %>%
+  left_join(select(pdb_mapping, pdb, uniprot) %>% distinct(uniprot, .keep_all = TRUE), by = "uniprot")
 
 # Calculate ROC
 less = c("SIFT4G", "BLOSUM62", "FATHMM", "PROVEAN", "ESM-1v")
-roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho),
+roc <- pivot_longer(preds, c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho, -pdb),
+                    names_to = "model", values_to = "pred") %>%
+  group_by(model) %>%
+  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less), max_steps = 5000)) %>%
+  mutate(pr_auc = pr_auc(tpr, precision)) %>%
+  ungroup() %>%
+  arrange(model) %>%
+  write_tsv("data/clinvar/other_tools_roc.tsv")
+
+roc_struct <- filter(preds, !is.na(pdb)) %>%
+  pivot_longer(c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho, -pdb),
                     names_to = "model", values_to = "pred") %>%
   group_by(model) %>%
   group_modify(~calc_roc(.x, clnsig_patho, pred, greater = !(.y %in% less), max_steps = 5000)) %>%
   mutate(pr_auc = pr_auc(tpr, precision)) %>%
   ungroup() %>%
   arrange(model)
-write_tsv(roc, "data/clinvar/other_tools_roc.tsv")
+
+struct_diff <- left_join(distinct(roc, model, auc, pr_auc),
+                         distinct(roc_struct, model, auc, pr_auc),
+                         by = "model", suffix = c("_all", "_struct")) %>%
+  mutate(auc_diff = auc_all - auc_struct, pr_diff = pr_auc_all - pr_auc_struct)
