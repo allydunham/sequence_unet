@@ -72,7 +72,7 @@ common_time_axis <- dup_axis(name = "", breaks = c(0.01, 1, 60, 60*60, 60*60*24)
 
 comp_time_colours <- c(SIFT4G = unname(TOOL_COLOURS["SIFT4G"]), FoldX = unname(TOOL_COLOURS["FoldX"]),
                        `UNET (CPU)` = "#6a3d9a", `UNET (GPU)` = "#e31a1c", `Batch UNET (GPU)` = "#377eb8",
-                       `ESM-1b (CPU)` = "#d95f02", `ESM-1b (GPU)` = "#66a61e")
+                       `ESM-1b (CPU)` = "#f0d50f", `ESM-1b (GPU)` = "#66a61e")
 
 comp_time_shapes <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.1, `UNET (CPU)` = 0.1, `Batch UNET (GPU)` = 0.1, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.1)
 comp_time_alpha <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.5, `UNET (CPU)` = 0.5, `Batch UNET (GPU)` = 0.5, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.5)
