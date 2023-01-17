@@ -126,8 +126,9 @@ correlations <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_t
   drop_na() %>%
   mutate(pred = ifelse(tool %in% less, pred, -pred)) %>% # Change preds so lower score means more deleterious like score
   group_by(tool, uniprot) %>%
-  summarise(pearson = cor(score, pred, method = "pearson"), spearman = cor(score, pred, method = "spearman"), .groups = "drop_last") %>%
-  summarise(studies = n(), mean_pearson = mean(pearson), sd_pearson = sd(pearson), mean_spearman = mean(spearman), sd_spearman = sd(spearman)) %>%
+  summarise(pearson = cor(score, pred, method = "pearson"), spearman = cor(score, pred, method = "spearman"), n = n(),.groups = "drop_last") %>%
+  summarise(studies = n(), variants = sum(n), mean_pearson = mean(pearson), sd_pearson = sd(pearson),
+            mean_spearman = mean(spearman), sd_spearman = sd(spearman)) %>%
   mutate(stderr_pearson = sd_pearson/sqrt(studies), stderr_spearman = sd_spearman/sqrt(studies))
 write_tsv(correlations, "data/dms/correlation.tsv")
 
