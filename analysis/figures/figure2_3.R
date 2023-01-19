@@ -25,9 +25,10 @@ p_pssm_cor <- ggplot(pssm_cor, aes(x = model, y = estimate, fill = model, ymin =
 ### Panel - ROC curve ###
 classifier_roc <- read_tsv("data/freq/roc.tsv") %>%
   group_by(model) %>%
-  mutate(pr_auc = pr_auc(tpr, precision)) %>%
+  mutate(pr_auc = pr_auc(tpr, precision),
+         n = tp + tn + fp + fn) %>%
   ungroup() %>%
-  distinct(model, auc, pr_auc) %>%
+  distinct(model, auc, pr_auc, n) %>%
   mutate(model = factor(model, levels = model[order(auc)])) %>%
   pivot_longer(c(auc, pr_auc), names_to = "metric", values_to = "value")
 
