@@ -201,8 +201,8 @@ def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make
     ----------
     model     : keras.Model
         Sequence UNET model to predict with (or another with the same input/output signature).
-    data      : ProteinNetPy Dataset
-        ProteinNetPy Dataset to predict from. Use filter functions on this dataset to control what predictions are made.
+    sequences      : Iterable of str or BioPython sequences
+        Sequences to predict from.
     layers    : int
         Number of layers in the Sequence UNET model. All pre-trained models have 6 layers.
     variants  : Pandas DataFrame or None
