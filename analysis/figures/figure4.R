@@ -103,6 +103,17 @@ p_dms <- ggplot(dms_cor, aes(x = as.integer(tool), y = mean_spearman, fill = typ
         panel.grid.major.y = element_blank(),
         axis.ticks.y = element_blank())
 
+### Alt Panel - Specieswise DMS Summary ###
+dms_cor_species <- read_tsv("data/dms/correlation_species.tsv") %>%
+  drop_na() %>%
+  filter(str_starts(tool, "UNET"))
+
+p_dms_species <- ggplot(dms_cor_species, aes(x = pearson, y = spearman, colour = species, shape = tool)) +
+  geom_point() +
+  scale_color_brewer(name = "Species", palette = "Dark2") +
+  scale_shape(name = "") +
+  labs(x = expression("Pearson's"~rho), y = expression("Spearman's"~rho))
+
 ### Panel - Jelier Yeast Summary ###
 jelier_roc <- read_tsv("data/jelier/roc.tsv") %>%
   mutate(n = tp + tn + fp + fn) %>%

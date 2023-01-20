@@ -7,9 +7,9 @@ plots <- list()
 # Import DMS data
 # Uses the data from Dunham and Beltrao 2021 (MSB)
 dms <- read_tsv("data/dms/long_combined_mutational_scans.tsv") %>%
-  left_join(select(read_tsv("data/dms/gene_summary.tsv"), gene = Gene, uniprot = `Uniprot ID`), by = "gene") %>%
+  left_join(select(read_tsv("data/dms/gene_summary.tsv"), gene = Gene, uniprot = `Uniprot ID`, species = Species), by = "gene") %>%
   filter(class == "Missense") %>%
-  select(gene, uniprot, position, wt, mut, score, SIFT4G=sift, FoldX = total_energy)
+  select(gene, uniprot, species, position, wt, mut, score, SIFT4G=sift, FoldX = total_energy)
 
 # Import Sequence UNET data
 unet <- bind_rows(
@@ -131,6 +131,13 @@ correlations <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_t
             mean_spearman = mean(spearman), sd_spearman = sd(spearman)) %>%
   mutate(stderr_pearson = sd_pearson/sqrt(studies), stderr_spearman = sd_spearman/sqrt(studies))
 write_tsv(correlations, "data/dms/correlation.tsv")
+
+correlations_species <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_to = "pred") %>%
+  drop_na() %>%
+  mutate(pred = ifelse(tool %in% less, pred, -pred)) %>% # Change preds so lower score means more deleterious like score
+  group_by(tool, species, uniprot) %>%
+  summarise(pearson = cor(score, pred, method = "pearson"), spearman = cor(score, pred, method = "spearman"), n = n(), .groups = "drop")
+write_tsv(correlations_species, "data/dms/correlation_species.tsv")
 
 roc <- pivot_longer(preds, SIFT4G:`GERP++`, names_to = "tool", values_to = "pred") %>%
   mutate(class = score < -0.5) %>%
