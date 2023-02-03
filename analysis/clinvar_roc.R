@@ -74,5 +74,27 @@ plots$roc_thresh <- ggplot(filter(roc, str_detect(model, "Thresh")), aes(x = fpr
   labs(x = 'False Positive Rate', y = 'True Positive Rate') +
   scale_colour_brewer(type = 'qual', palette = 'Set3', name = '')
 
+# Protein positions in training data
+train <- read_tsv("data/clinvar/clinvar_train.tsv")
+
+train_roc <- mutate(preds, in_train = str_c(uniprot, position) %in% str_c(train$uniprot, train$position)) %>%
+  pivot_longer(c(-uniprot, -position, -wt, -mut, -clnsig, -clnsig_patho, -in_train), names_to = "model", values_to = "pred") %>%
+  group_by(model, in_train) %>%
+  group_modify(~calc_roc(.x, clnsig_patho, pred, greater = TRUE, max_steps = 6000)) %>%
+  mutate(pr_auc = pr_auc(tpr, precision)) %>%
+  ungroup() %>%
+  arrange(desc(auc)) %>%
+  mutate(model_auc = auc_labeled_model(model, auc))
+
+plots$in_train <- distinct(train_roc, model, in_train, auc, pr_auc) %>%
+  filter(model %in% c("UNET", "UNET (Finetune)", "UNET (Top)")) %>%
+  ggplot(aes(x = model, y = auc, fill = in_train)) +
+  geom_col(position = "dodge") + 
+  coord_flip() +
+  scale_fill_brewer(name = "Position in\nTraining Set", palette = "Dark2") +
+  labs(x = "", y = "AUC") +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"))
+
 save_plotlist(plots, "figures/clinvar_unet/", overwrite = "all")
 
