@@ -1,4 +1,7 @@
 # Sequence UNET 1.0.0
+[![DOI](https://zenodo.org/badge/370484533.svg)](https://zenodo.org/badge/latestdoi/370484533)
+
+
 
 Sequence UNET is a fully convolutional neural network variant effect predictor, able to predict the pathogenicity of protein coding variants and the frequency they occur across large multiple sequence alignments.
 A description and discussion of the model is available on bioRxiv [(Dunham et al. 2022)](https://www.biorxiv.org/content/10.1101/2022.05.23.493038).
