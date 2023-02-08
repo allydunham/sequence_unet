@@ -112,7 +112,10 @@ p_dms_species <- ggplot(dms_cor_species, aes(x = pearson, y = spearman, colour =
   geom_point() +
   scale_color_brewer(name = "Species", palette = "Dark2") +
   scale_shape(name = "") +
+  coord_fixed() +
   labs(x = expression("Pearson's"~rho), y = expression("Spearman's"~rho))
+ggsave("figures/figures/figure_S3.pdf", p_dms_species, units = "cm", height = 12, width = 17)
+ggsave("figures/figures/figure_S3.png", p_dms_species, units = "cm", height = 12, width = 17)
 
 ### Panel - Jelier Yeast Summary ###
 jelier_roc <- read_tsv("data/jelier/roc.tsv") %>%
