@@ -29,15 +29,15 @@ TOOL_COLOURS <- c(`PreGraph UNET`="#cab2d6",
                   `Baseline CNN`="#33a02c",
                   `Baseline Frequency` = "#b2df8a",
                   `Baseline ClinVar` = "#33a02c",
-                  BLOSUM62="#b15928",
+                  BLOSUM62="#a65628",
                   SIFT4G="#e6ab02",
                   SPBuild="#e78ac3",
-                  `FoldX`="#66c2a5",
+                  `FoldX`="#a65628",
                   `ESM-1b`="#377eb8",
                   `ESM-1b Logits`="#91ceff",
                   `ESM-1b Top Model`="#377eb8")
 
-KINGDOM_COLOURS <- c(Eukaryote = "#984ea3", Archea = "#e41a1c", Bacteria = "#4daf4a")
+KINGDOM_COLOURS <- c(Eukaryote = "#7570b3", Archea = "#d95f02", Bacteria = "#1b9e77")
 
 ### Functions ###
 pretty_p_values <- function(p, breaks = c(0.001, 0.01, 0.05), markdown_exp=FALSE, prefix_p=FALSE){

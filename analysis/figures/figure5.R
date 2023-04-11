@@ -36,6 +36,7 @@ p_data <- ggplot(data_summary, aes(x = value, y = superkingdom, fill=superkingdo
   facet_wrap(~name, ncol = 1, scales = "free", strip.position = "bottom", labeller = labeller(name = str_to_title)) +
   geom_col(show.legend = FALSE) +
   scale_x_continuous(expand = expansion(c(0, 0.05))) +
+  scale_fill_manual(name = "", values = KINGDOM_COLOURS) +
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         axis.ticks.y = element_blank(),
@@ -71,8 +72,8 @@ common_time_axis <- dup_axis(name = "", breaks = c(0.01, 1, 60, 60*60, 60*60*24)
                              labels = c("10 Milliseconds", "1 Second", "1 Minute", "1 Hour", "1 Day"))
 
 comp_time_colours <- c(SIFT4G = unname(TOOL_COLOURS["SIFT4G"]), FoldX = unname(TOOL_COLOURS["FoldX"]),
-                       `UNET (CPU)` = "#6a3d9a", `UNET (GPU)` = "#e31a1c", `Batch UNET (GPU)` = "#377eb8",
-                       `ESM-1b (CPU)` = "#f0d50f", `ESM-1b (GPU)` = "#66a61e")
+                       `UNET (CPU)` = "#377eb8", `UNET (GPU)` = "#6a3d9a", `Batch UNET (GPU)` = "#cab2d6",
+                       `ESM-1b (CPU)` = "#fb9a99", `ESM-1b (GPU)` = "#e41a1c")
 
 comp_time_shapes <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.1, `UNET (CPU)` = 0.1, `Batch UNET (GPU)` = 0.1, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.1)
 comp_time_alpha <- c(SIFT4G = 1, FoldX = 1, `UNET (GPU)` = 0.5, `UNET (CPU)` = 0.5, `Batch UNET (GPU)` = 0.5, `ESM-1b (CPU)` = 1, `ESM-1b (GPU)` = 0.5)
@@ -136,7 +137,7 @@ p_correlation <- ggplot() +
   
   # UNET correlation columns
   geom_col(data = omics_unet, mapping = aes(x = organism_int, y = estimate, fill = superkingdom), width = 0.7) +
-  geom_errorbar(data = omics_unet, mapping = aes(x = organism_int, ymin = pmax(conf.low, 0), ymax = conf.high), width = 0.5) +
+  geom_errorbar(data = omics_unet, mapping = aes(x = organism_int, ymin = pmax(conf.low, 0), ymax = conf.high), width = 0.5, size = 0.4) +
   geom_hline(yintercept = 0) +
   scale_fill_manual(name = "", values = KINGDOM_COLOURS) +
   
@@ -171,8 +172,8 @@ source_summary <- select(omics, superkingdom, organism, source, tool, intensity_
 
 p_source <- ggplot(source_summary, aes(x = source, y = estimate, fill = source)) +
   facet_wrap(~superkingdom, nrow = 1) +
-  geom_boxplot(show.legend = FALSE, outlier.shape = 20, outlier.size = 0.8) +
-  scale_fill_brewer(palette = "Dark2") +
+  geom_boxplot(show.legend = FALSE, outlier.shape = 20, outlier.size = 0.8, size = 0.2) +
+  scale_fill_brewer(palette = "Set1") +
   scale_y_continuous(expand = expansion(0, 0.2), limits = c(-0.4, 1)) +
   stat_compare_means(method = "t.test", comparisons = list(c("SwissProt", "TrEMBL")), size = 2.5, vjust = -0.1) +
   labs(x = "", y = expression("Pearson's"~rho)) +
@@ -181,7 +182,7 @@ p_source <- ggplot(source_summary, aes(x = source, y = estimate, fill = source))
 ### Panel - Correlation with length variance ###
 p_correlation_length_sd <- ggplot(filter(omics_summary, tool == "UNET PSSM"), aes(x = estimate, y = sd_length)) +
   geom_point(aes(colour = superkingdom), shape = 20, size = 1.5) +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom), size = 0.5) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom), size = 0.4) +
   scale_colour_manual(name = "", values = KINGDOM_COLOURS) +
   labs(x = expression("Pearson's"~rho), y = expression(sigma~"Length")) +
   theme(axis.title.x = element_text(margin = margin(0, 0, -12, 0)))
@@ -189,7 +190,7 @@ p_correlation_length_sd <- ggplot(filter(omics_summary, tool == "UNET PSSM"), ae
 ### Panel - Correlation with abundance variance ###
 p_correlation_abundance_sd <- ggplot(filter(omics_summary, tool == "UNET PSSM"), aes(x = estimate, y = sd_intensity)) +
   geom_point(aes(colour = superkingdom), shape = 20, size = 1.5) +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom), size = 0.5) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high, colour = superkingdom), size = 0.4) +
   geom_smooth(method = "lm", formula = y ~ x, colour = "black", size = 0.5) +
   scale_y_log10() +
   scale_colour_manual(name = "", values = KINGDOM_COLOURS) +

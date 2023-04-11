@@ -3,19 +3,6 @@
 source('src/config.R')
 source("src/analysis.R")
 
-model_colours <- c(
-  `UNET (Top)` = "#1f78b4", `UNET (Finetune)` = "#e31a1c", `UNET` = "#6a3d9a",
-  `UNET (Top)*` = "#1f78b4", `PreGraph UNET (Top)*` = "#a6cee3",
-  `UNET (Finetune)*` = "#e31a1c", `PreGraph UNET (Finetune)*` = "#fb9a99",
-  `UNET*` = "#6a3d9a", `PreGraph UNET*` = "#cab2d6",
-  `Baseline ClinVar*` = "#33a02c", `Baseline Frequency*` = "#33a02c", 
-  `ClinPred` = "#989898", `REVEL` = "#989898", `MVP` = "#989898", `VEST4` = "#989898", `M-CAP` = "#989898",
-  `DEOGEN2` = "#989898", `CADD` = "#989898", `EVE` = "#e6ab02", `FATHMM-XF` = "#989898", `PolyPhen2` = "#989898",
-  `PROVEAN` = "#989898", `MutationAssessor` = "#989898", `MutPred` = "#989898", `FATHMM` = "#989898", `ESM-1v`="#e6ab02",
-  `SIFT4G` = "#e6ab02", `PrimateAI` = "#989898", `LIST S2` = "#989898", `MPC` = "#989898", `FATHMM-MKL` = "#989898",
-  `FoldX` = "#e6ab02", `DANN` = "#989898", `GenoCanyon` = "#989898", `GERP++` = "#989898", `BLOSUM62` = "#989898"
-)
-
 model_type <- c(
   `UNET (Top)` = "UNET (All)", `UNET (Finetune)` = "UNET (All)", `UNET` = "UNET (All)",
   `UNET (Top)*` = "UNET (Structured)", `PreGraph UNET (Top)*` = "UNET (Structured)", `UNET (Finetune)*` = "UNET (Structured)",
@@ -38,8 +25,8 @@ type_colours <- c(
   `Neural Network` = "#1f78b4",
   `Other ML`="#a6cee3",
   `MSA`="#33a02c",
-  `Structure`="#e6ab02",
-  Ensemble="#e31a1c"
+  `Structure`="#a65628",
+  Ensemble="#e6ab02"
 )
 
 ### Panel - Example ###
