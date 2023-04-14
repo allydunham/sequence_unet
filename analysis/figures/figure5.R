@@ -221,4 +221,4 @@ figure5 <- multi_panel_figure(width = rep(30, 6), height = c(40, 120, 40, 10), p
   fill_panel(pleg, row = 4, column = 3:6)
 
 #ggsave('figures/figures/figure5.pdf', figure5, width = figure_width(figure5), height = figure_height(figure5), units = 'mm', device = cairo_pdf())
-ggsave('figures/figures/figure5.png', figure5, width = figure_width(figure5), height = figure_height(figure5), units = 'mm', dpi = 600)
+ggsave('figures/figures/figure5.png', figure5, width = figure_width(figure5), height = figure_height(figure5), units = 'mm', dpi = 1200)
