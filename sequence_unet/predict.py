@@ -44,7 +44,7 @@ def one_hot_sequence(seq):
         One-hot encoded sequence array
     """
     indeces = np.array([AA_HASH[aa] for aa in seq])
-    one_hot = np.zeros((len(indeces), 20), dtype=np.int)
+    one_hot = np.zeros((len(indeces), 20), dtype=int)
     one_hot[np.arange(len(indeces)), indeces] = 1
     return one_hot
 
@@ -88,7 +88,7 @@ def freqs_to_pssm(mat):
     Numpy array
         (B x) N x 20 PSSM matrix.
     """
-    return np.log2((mat + 0.00001) / AA_FREQS[:,None]).astype(np.int)
+    return np.log2((mat + 0.00001) / AA_FREQS[:,None]).astype(int)
 
 class SequenceUNETMapFunction(LabeledFunction):
     """

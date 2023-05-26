@@ -1,7 +1,8 @@
-# Sequence UNET 1.0.0
+# Sequence UNET 1.0.1
+<!-- badges: start -->
 [![DOI](https://zenodo.org/badge/370484533.svg)](https://zenodo.org/badge/latestdoi/370484533)
-
-
+[![Documentation Status](https://readthedocs.org/projects/sequence-unet/badge/?version=latest)](https://sequence-unet.readthedocs.io/en/latest/?badge=latest)
+<!-- badges: end -->
 
 Sequence UNET is a fully convolutional neural network variant effect predictor, able to predict the pathogenicity of protein coding variants and the frequency they occur across large multiple sequence alignments.
 A description and discussion of the model is available on bioRxiv [(Dunham et al. 2022)](https://www.biorxiv.org/content/10.1101/2022.05.23.493038).
@@ -11,27 +12,41 @@ It uses a U-shaped architecture inspired by the U-NET medical image segmentation
 
 This repo contains a python package for downloading and using the trained models as well as code used to train, explore and analyse the models.
 The package can download, load and predict with 8 variant trained models, which are also available for manual download on [BioStudies](https://www.ebi.ac.uk/biostudies/studies/S-BSST732).
-
-## Installation
-
-1. Install ProteinNetPy requirement from GitHub: `pip install git+https://github.com/allydunham/proteinnetpy`
-2. Install Sequence UNET: `pip install git+https://github.com/allydunham/sequence_unet`. Pip will handle installing all other dependancies.
-
 The python package is contained in the `sequence_unet` directory, with documentation in the `docs` directory.
 It is also possible to use the modules and scripts used for training and exploring different models, found in `analysis`, `bin` and `source`.
 The python scripts and modules require adding the `src` directory to your python path.
+
+## Installation
+
+In most cases pip should be able to handle all the dependancies, meaning installation is simple:
+
+`pip install git+https://github.com/allydunham/sequence_unet`
+
+### Manual installation
+
+If pip can't resolve the correct dependancies the requirements might be able to be installed manually:
+
+1. Install Tensorflow (or tensorflow-macos on M1 Macs): `pip install tensorflow` or `pip install tensorflow-macos`
+2. Install other PyPi requirements: `pip install numpy pandas biopython tqdm`
+3. Install ProteinNetPy from GitHub: `pip install git+https://github.com/allydunham/proteinnetpy`
+4. Install Sequence UNET: `pip install --no-deps git+https://github.com/allydunham/sequence_unet`
+
+This was needed on M1 Macs before I updated `pyproject.toml` to use `tensorflow-macos` for those systems since no versions of Tensorflow were available which matched the requirements.
+It might help similar compatibility issues too.
 
 ### Requirements
 
 The python package requires:
 
 * Python 3+
-* Tensorflow 2.5+
+* Tensorflow 2.6+
 * Numpy
 * Pandas
 * Biopython
 * TQDM
 * [ProteinNetPy](https://github.com/allydunham/proteinnetpy)
+
+I have tried to maintain as broad requirements as possible but future changes, particularly in Tensorflow, may result in more restrictive version support.
 
 Figure generation and performance analysis was performed in R 4.0, largely using [Tidyverse](https://www.tidyverse.org/) packages.
 All R packages used are loaded in `src/config.R` or the top of the respective script.

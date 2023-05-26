@@ -272,6 +272,6 @@ def one_hot_sequence(seq):
     Convert a Biopython AA sequnece to one hot representation
     """
     indeces = np.array([AA_HASH[aa] for aa in seq])
-    one_hot = np.zeros((len(indeces), 20), dtype=np.int)
+    one_hot = np.zeros((len(indeces), 20), dtype=int)
     one_hot[np.arange(len(indeces)), indeces] = 1
     return one_hot
