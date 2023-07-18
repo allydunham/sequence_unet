@@ -1,9 +1,10 @@
 """
 Load, download and initialise trained and untrained Sequence UNET models.
 """
-from logging import warning
+from logging import error
 import os
 import ftplib
+import urllib.request
 import tqdm
 from shutil import unpack_archive
 from contextlib import closing
@@ -32,6 +33,11 @@ BIOSTUDIES_FTP = "biostudies/nfs/S-BSST/732/S-BSST732"
 FTP path to the BioStudies directory containing the model data
 """
 
+BIOSTUDIES_HTTPS = "https://www.ebi.ac.uk/biostudies/files/S-BSST732"
+"""
+Base HTTPS path for models on Biostudies
+"""
+
 MODELS = [
     'freq_classifier',
     'pregraph_freq_classifier',
@@ -52,13 +58,53 @@ def _make_progess_file_writer(file, pbar):
         pbar.update(len(data))
     return f
 
-def download_trained_model(model, root=".", model_format="tf"):
+def _download_model_ftp(model, ext, dl_path):
+    """
+    Download a model from BioStudies over FTP
+    """
+    with closing(ftplib.FTP("ftp.ebi.ac.uk")) as ftp:
+        ftp.login()
+        ftp.cwd(f"{BIOSTUDIES_FTP}/Files/")
+        file_size = ftp.size(f"{model}.{ext}")
+        pbar = tqdm.tqdm(desc=f"Downloading {model}", total=file_size, unit="B", unit_scale=True)
+        with open(dl_path, "w+b") as dl_file, pbar as pbar:
+            writer = _make_progess_file_writer(dl_file, pbar)
+            res = ftp.retrbinary(f"RETR {model}.{ext}", writer)
+
+        if not res.startswith('226 Transfer complete.'):
+            raise ConnectionError(f"FTP download failed with response \"{res}\"")
+
+def _download_model_http(model, ext, dl_path):
+    """
+    Download a model from BioStudies over HTTP
+    """
+    # Based on https://stackoverflow.com/a/41107237
+    url = f"{BIOSTUDIES_HTTPS}/{model}.{ext}"
+    with closing(urllib.request.urlopen(url)) as res:
+        if not res.status == 200:
+            raise ConnectionError(f"HTTP connection failed with status code {res.status}")
+
+        file_size = res.getheader('content-length')
+        file_size = int(file_size) if file_size else 550000000
+        blocksize = max(4096, file_size//100)
+        pbar = tqdm.tqdm(desc=f"Downloading {model}", total=file_size, unit="B", unit_scale=True)
+        with open(dl_path, "w+b") as dl_file, pbar as pbar:
+            writer = _make_progess_file_writer(dl_file, pbar)
+            while True:
+                chunk = res.read(blocksize)
+                if not chunk:
+                    break
+                writer(chunk)
+
+def download_trained_model(model, root=".", model_format="tf", use_ftp=True):
     """
     Download a trained Sequence UNET model.
 
     Download the specified trained Sequence UNET model from BioStudies.
     Models are specified using the IDs indicated in models.MODELS, which also maps them to BioStudies files.
     Each model comes in a sequence only version (X) and version accepting additional structural input (pregraph_X).
+    FTP download is recommended to give the best transfer speeds and lowest load for
+    BioStudies, but an HTTP fallback is also provided if FTP isn't possible.
 
     Available models:
 
@@ -79,6 +125,8 @@ def download_trained_model(model, root=".", model_format="tf"):
         Root directory to download to.
     model_format : {'tf', 'h5'}
         Format to download the models in.
+    use_ftp      : bool
+        Download over FTP rather than HTTP.
 
     Returns
     -------
@@ -97,31 +145,35 @@ def download_trained_model(model, root=".", model_format="tf"):
     ext = "tf.tar.gz" if model_format == 'tf' else 'h5'
     dl_path = f"{root}/{model}.{ext}"
 
-    with closing(ftplib.FTP("ftp.ebi.ac.uk")) as ftp:
-        ftp.login()
-        ftp.cwd(f"{BIOSTUDIES_FTP}/Files/")
-        file_size = ftp.size(f"{model}.{ext}")
-        pbar = tqdm.tqdm(desc=f"Downloading {model}", total=file_size, unit="B", unit_scale=True)
-        with open(dl_path, "w+b") as dl_file, pbar as pbar:
-            writer = _make_progess_file_writer(dl_file, pbar)
-            res = ftp.retrbinary(f"RETR {model}.{ext}", writer)
-
-        if not res.startswith('226 Transfer complete.'):
-            warning(f"{model} download incomplete. Deleting partial file.")
+    dl_func = _download_model_ftp if use_ftp else _download_model_http
+    try:
+        dl_func(model, ext, dl_path)
+    except (Exception, KeyboardInterrupt) as err:
+        try:
             os.remove(dl_path)
-            return None
+        except FileNotFoundError:
+            pass
+        except Exception as err:
+            error((f"Failed to delete partial download with error {err}. "
+                    f"There may be an incomplete download left at {dl_path}."))
+        raise ConnectionError((f"{'FTP' if use_ftp else 'HTTP'} download failed for {model}. "
+                               f"Consider trying {'HTTP' if use_ftp else 'FTP'} with "
+                               f"use_ftp={not use_ftp}"))
 
     if model_format == "tf":
         unpack_archive(dl_path, format="gztar")
-        dl_path = dl_path[:-7] # remove .tar.gz
+        os.remove(dl_path) # Remove Tar archive
+        dl_path = dl_path[:-7] # Drop .tar.gz extension
 
     return dl_path
 
-def download_all_models(root=".", model_format="tf"):
+def download_all_models(root=".", model_format="tf", use_ftp=True):
     """
     Download all trained Sequence UNET models.
 
     Download all trained Sequence UNET models from BioStudies. See `download_trained_model` for a description of the available models.
+    FTP download is recommended to give the best transfer speeds and lowest load for
+    BioStudies, but an HTTP fallback is also provided if FTP isn't possible.
 
     Parameters
     ----------
@@ -129,6 +181,8 @@ def download_all_models(root=".", model_format="tf"):
         Root directory to download to.
     model_format : {'tf', 'h5'}
         Format to download the models in.
+    use_ftp      : bool
+        Download over FTP rather than HTTP.
 
     Returns
     -------
@@ -143,11 +197,12 @@ def download_all_models(root=".", model_format="tf"):
 
     paths = {}
     for model in MODELS:
-        paths[model] = download_trained_model(model, root=root, model_format=model_format)
+        paths[model] = download_trained_model(model, root=root, model_format=model_format,
+                                              use_ftp=use_ftp)
 
     return paths
 
-def load_trained_model(model, root=".", download=False, model_format="tf"):
+def load_trained_model(model, root=".", download=False, model_format="tf", use_ftp=True):
     """
     Load Sequence UNET models.
 
@@ -164,6 +219,8 @@ def load_trained_model(model, root=".", download=False, model_format="tf"):
         Download the requested model if it is not located.
     model_format : str
         Format for the model if model is an ID rather than a full path.
+    use_ftp      : bool
+        Download over FTP rather than HTTP.
 
     Returns
     -------
@@ -177,7 +234,7 @@ def load_trained_model(model, root=".", download=False, model_format="tf"):
         path = f"{root}/{model}.{model_format}"
         if not os.path.exists(path):
             if download:
-                download_trained_model(model, root, model_format=model_format)
+                download_trained_model(model, root, model_format=model_format, use_ftp=use_ftp)
             else:
                 raise FileNotFoundError("No model found at {path}")
 
