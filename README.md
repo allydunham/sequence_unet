@@ -32,7 +32,7 @@ If pip can't resolve the correct dependancies the requirements might be able to 
 
 1. Install Tensorflow (or tensorflow-macos on M1 Macs): `pip install tensorflow` or `pip install tensorflow-macos`
 2. Install other PyPi requirements: `pip install numpy pandas biopython tqdm proteinnetpy`
-3. Install Sequence UNET: `pip install --no-deps git+https://github.com/allydunham/sequence_unet`
+3. Install Sequence UNET: `pip install --no-deps sequence_unet`
 
 This was needed on M1 Macs before I updated `pyproject.toml` to use `tensorflow-macos` for those systems since no versions of Tensorflow were available which matched the requirements.
 It might help similar compatibility issues too.
