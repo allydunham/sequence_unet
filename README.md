@@ -1,4 +1,4 @@
-# Sequence UNET 1.0.1
+# Sequence UNET 1.0.2
 <!-- badges: start -->
 [![DOI](https://zenodo.org/badge/370484533.svg)](https://zenodo.org/badge/latestdoi/370484533)
 [![Documentation Status](https://readthedocs.org/projects/sequence-unet/badge/?version=latest)](https://sequence-unet.readthedocs.io/en/latest/?badge=latest)
@@ -20,6 +20,10 @@ The python scripts and modules require adding the `src` directory to your python
 
 In most cases pip should be able to handle all the dependancies, meaning installation is simple:
 
+`pip install sequence_unet`
+
+Or the latest development version from GitHub:
+
 `pip install git+https://github.com/allydunham/sequence_unet`
 
 ### Manual installation
@@ -27,9 +31,8 @@ In most cases pip should be able to handle all the dependancies, meaning install
 If pip can't resolve the correct dependancies the requirements might be able to be installed manually:
 
 1. Install Tensorflow (or tensorflow-macos on M1 Macs): `pip install tensorflow` or `pip install tensorflow-macos`
-2. Install other PyPi requirements: `pip install numpy pandas biopython tqdm`
-3. Install ProteinNetPy from GitHub: `pip install git+https://github.com/allydunham/proteinnetpy`
-4. Install Sequence UNET: `pip install --no-deps git+https://github.com/allydunham/sequence_unet`
+2. Install other PyPi requirements: `pip install numpy pandas biopython tqdm proteinnetpy`
+3. Install Sequence UNET: `pip install --no-deps git+https://github.com/allydunham/sequence_unet`
 
 This was needed on M1 Macs before I updated `pyproject.toml` to use `tensorflow-macos` for those systems since no versions of Tensorflow were available which matched the requirements.
 It might help similar compatibility issues too.

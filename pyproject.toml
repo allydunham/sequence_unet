@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sequence_unet"
-version = "1.0.1"
+version = "1.0.2"
 description = "Make protein predictions with Sequence UNET and train new models"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE.md", content-type = "text/markdown"}
@@ -25,7 +25,7 @@ dependencies = [
   "pandas",
   "biopython",
   "tqdm",
-  "proteinnetpy @ git+https://github.com/allydunham/proteinnetpy",
+  "proteinnetpy",
   "tensorflow >=2.6.0, <3.0.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
   "tensorflow-macos >=2.6.0, <3.0.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]

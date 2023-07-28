@@ -10,6 +10,7 @@ models/**
 
 # Python package
 build/*
+dist/*
 sequence_unet.egg-info/*
 
 # Documentation
