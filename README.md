@@ -1,4 +1,4 @@
-# Sequence UNET 1.0.2
+# Sequence UNET 1.0.3
 <!-- badges: start -->
 [![DOI](https://zenodo.org/badge/370484533.svg)](https://zenodo.org/badge/latestdoi/370484533)
 [![Documentation Status](https://readthedocs.org/projects/sequence-unet/badge/?version=latest)](https://sequence-unet.readthedocs.io/en/latest/?badge=latest)

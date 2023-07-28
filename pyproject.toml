@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sequence_unet"
-version = "1.0.2"
+version = "1.0.3"
 description = "Make protein predictions with Sequence UNET and train new models"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE.md", content-type = "text/markdown"}
