@@ -236,7 +236,7 @@ def load_trained_model(model, root=".", download=False, model_format="tf", use_f
             if download:
                 download_trained_model(model, root, model_format=model_format, use_ftp=use_ftp)
             else:
-                raise FileNotFoundError("No model found at {path}")
+                raise FileNotFoundError(f"No model found at {path}")
 
     else:
         raise ValueError(("Unrecognised model - must be a path to a SavedModel or one of the "
