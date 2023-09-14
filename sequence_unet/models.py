@@ -161,7 +161,7 @@ def download_trained_model(model, root=".", model_format="tf", use_ftp=True):
                                f"use_ftp={not use_ftp}"))
 
     if model_format == "tf":
-        unpack_archive(dl_path, format="gztar")
+        unpack_archive(dl_path, format="gztar", extract_dir=root)
         os.remove(dl_path) # Remove Tar archive
         dl_path = dl_path[:-7] # Drop .tar.gz extension
 

@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from Bio.SeqRecord import SeqRecord
 from sequence_unet.graph_cnn import contact_graph
 from proteinnetpy.data import LabeledFunction
 
@@ -32,11 +33,11 @@ Frequency of each Amino Acid in SwissProt. These were collected from ExPASY Data
 
 def one_hot_sequence(seq):
     """
-    Convert a Biopython AA sequnece to one hot representation.
+    Convert a Biopython or string AA sequnece to one hot representation.
 
     Parameters
     ----------
-    seq : BioPython Sequence
+    seq : BioPython Sequence or str
         Sequence to convert to one-hot matrix
     Returns
     -------
@@ -195,13 +196,13 @@ class SequenceUNETMapFunction(LabeledFunction):
 
 def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make_pssm=False):
     """
-    Predict values from a iterable of sequence strings
+    Predict values from a iterable of BioPython SeqRecords, strings or objects coerceable to strings.
 
     Parameters
     ----------
     model     : keras.Model
         Sequence UNET model to predict with (or another with the same input/output signature).
-    sequences      : Iterable of str or BioPython sequences
+    sequences      : Iterable of str or BioPython SeqRecords
         Sequences to predict from.
     layers    : int
         Number of layers in the Sequence UNET model. All pre-trained models have 6 layers.
@@ -215,7 +216,7 @@ def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make
     Yields
     ------
     Pandas DataFrame
-        Data frame of predictions, including columns for gene, position, wt, mut and prediction. If `wide=True` a column is included for each mutant amino acid prediction instead of mut and pred columns.
+        Data frame of predictions, including columns for gene, position, wt, mut and prediction. If `wide=True` a column is included for each mutant amino acid prediction instead of mut and pred columns. With SeqRecord input gene contains the ID, otherwise it's a numerical ID.
     """
     ind_cols = ["gene", "position", "wt"]
     if not wide:
@@ -224,11 +225,19 @@ def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make
     if variants is not None:
         variants = variants[ind_cols]
 
-    for seq in sequences:
+    for i, seq in enumerate(sequences):
+        # Handle BioPython Sequences
+        if isinstance(seq, SeqRecord):
+            gene = seq.id
+            seq = str(seq.seq)
+        else:
+            seq = str(seq)
+            gene = i
+
         try:
             one_hot = one_hot_sequence(seq)
         except KeyError as err:
-            logging.log(logging.WARN, "Skipping %s: unknown amino acid (%s)", seq.id, err)
+            logging.log(logging.WARN, "Skipping %s: unknown amino acid (%s)", gene, err)
             continue
 
         # Pad to be divisable
@@ -245,9 +254,9 @@ def predict_sequence(model, sequences, layers=6, variants=None, wide=False, make
         df = pd.DataFrame(preds, columns=AMINO_ACIDS).reset_index()
         df = df.rename(columns={'index': 'position'})
         df['position'] = df['position'] + 1
-        df = df[df.index < len(seq.seq)] # Remove padded records
-        df['gene'] = seq.id
-        df['wt'] = seq.seq
+        df = df[df.index < len(seq)] # Remove padded records
+        df['gene'] = gene 
+        df['wt'] = [i for i in seq]
 
         if not wide:
             df = df.melt(id_vars=["gene", "position", "wt"], var_name="mut", value_name="pred")
