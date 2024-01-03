@@ -1,6 +1,7 @@
 data/*
 meta/*
 figures/*
+test/*
 *.pdf
 
 # Models

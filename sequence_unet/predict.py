@@ -89,7 +89,7 @@ def freqs_to_pssm(mat):
     Numpy array
         (B x) N x 20 PSSM matrix.
     """
-    return np.log2((mat + 0.00001) / AA_FREQS[:,None]).astype(int)
+    return np.log2((mat + 0.00001) / AA_FREQS).astype(int)
 
 class SequenceUNETMapFunction(LabeledFunction):
     """
